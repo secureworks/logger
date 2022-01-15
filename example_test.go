@@ -10,10 +10,8 @@ import (
 	"github.com/secureworks/logger/log/middleware"
 )
 
-var (
-	// These are UNUSED and only for making this example compile.
-	e http.Handler
-)
+// These are UNUSED and only for making this example compile.
+var e http.Handler
 
 func Example() {
 	// If config is passed as nil to log.Open then this is used.

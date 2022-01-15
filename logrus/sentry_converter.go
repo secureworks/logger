@@ -12,45 +12,37 @@ import (
 	"github.com/secureworks/logger/log/internal/common"
 )
 
+// The sentryhook library provides a basic Logrus hook for sending
+// error logs to Sentry. Here we provide the hook with our specific
+// log-entry-to-Sentry conversion.
 func sentryConverter(entry *logrus.Entry, event *sentry.Event, hub *sentry.Hub) {
-	// Default takes care of most of this for us.
+	// Handles structuring the contents of the logrus.ErrorKey event data
+	// field on to event.Exception.
 	sentryhook.DefaultConverter(entry, event, hub)
 
-	// Add our own additions.
+	// Add panic errors in the log.PanicValue event data field.
 	if iface, ok := entry.Data[log.PanicValue]; ok {
 		pv, ok := iface.(string)
 		if !ok {
 			pv = fmt.Sprintf("%v", pv)
 		}
-
-		event.Exception = append(event.Exception, sentry.Exception{
-			Value: pv,
-		})
+		event.Exception = append(event.Exception, sentry.Exception{Value: pv})
 	}
 
+	// If we have a panic value then either append its stack trace to the
+	// Exception or make a new Exception with its stack trace.
 	if st, ok := entry.Data[log.PanicStack].(errors.StackTrace); ok && len(st) > 0 {
 		frames := make([]sentry.Frame, 0, len(st))
-
-		for _, f := range st {
-			// All of the methods we need are private, just go through
-			// MarshalText which cannot fail.
+		for i, f := range st {
 			dat, _ := f.MarshalText()
-
-			frames = append(frames, common.ParseFrame(string(dat)))
+			frames[i] = common.ParseFrame(string(dat))
 		}
 
-		trace := &sentry.Stacktrace{
-			Frames: frames,
-		}
-
+		trace := &sentry.Stacktrace{Frames: frames}
 		if len(event.Exception) > 0 {
-			// If we had a panic value above append to its Exception.
 			event.Exception[len(event.Exception)-1].Stacktrace = trace
 		} else {
-			// Otherwise make a new one.
-			event.Exception = append(event.Exception, sentry.Exception{
-				Stacktrace: trace,
-			})
+			event.Exception = []sentry.Exception{{Stacktrace: trace}}
 		}
 	}
 }

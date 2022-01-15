@@ -35,9 +35,8 @@ func newLogger(conf *log.Config, opts ...log.Option) (log.Logger, error) {
 
 		lrus.SetFormatter(jsonF)
 	}
-
 	if conf.EnableErrStack {
-		lrus.AddHook(errHook{})
+		lrus.AddHook(errorHook{})
 	}
 
 	if conf.Sentry.DSN != "" {
