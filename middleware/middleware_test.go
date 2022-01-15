@@ -10,11 +10,12 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/secureworks/logger/log"
+	"github.com/secureworks/logger/log/loggers/noop"
 )
 
 func TestHTTPBaseContext(t *testing.T) {
 	srv := httptest.NewUnstartedServer(nil)
-	noop := log.Noop()
+	noop := noop.New()
 
 	var c io.Closer
 	srv.Config, c = NewHTTPServer(noop, 0)
@@ -124,7 +125,7 @@ func TestHTTPRequestMiddlewareDetails(t *testing.T) {
 func positiveTest(req *http.Request, t *testing.T, testRequest *testRequest, expectedEntity map[string]interface{}) {
 	var entry log.Entry // NOTE(IB): hacky...
 
-	ml := mLog{log.Noop()}
+	ml := mLog{noop.New()}
 	mid := NewHTTPRequestMiddleware(ml, 0)
 
 	handler := mid(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -158,7 +159,7 @@ func positiveTest(req *http.Request, t *testing.T, testRequest *testRequest, exp
 }
 
 func TestHTTPRequestMiddlewarePanic(t *testing.T) {
-	ml := mLog{log.Noop()}
+	ml := mLog{noop.New()}
 	mid := NewHTTPRequestMiddleware(ml, 0)
 
 	pv := "this is fine"
