@@ -1,3 +1,7 @@
+// Package zerolog implements a unified logger with a Zerolog driver.
+// See the documentation associated with the Logger, Entry and
+// UnderlyingLogger interfaces for their respective methods.
+//
 package zerolog
 
 import (
@@ -14,12 +18,11 @@ import (
 	"github.com/secureworks/logger/log/internal/common"
 )
 
+// Register logger.
 func init() {
-	//	These really should be in newLogger below, but they're package
-	//	level vars in zerolog (bad) which means no matter where we put
-	//	them they have a chance to race, they'll just race less here. We
-	//	also can't do much about the fact that each instance of
-	//	zerolog.Logger will use these even if we don't want.
+
+	// These are package vars in Zerolog so putting them here is less
+	// race-y than setting them in newLogger.
 	zerolog.ErrorStackFieldName = log.StackField
 	zerolog.ErrorStackMarshaler = func(err error) interface{} {
 		st, _ := common.WithStackTrace(err)

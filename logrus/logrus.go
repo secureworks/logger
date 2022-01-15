@@ -1,3 +1,7 @@
+// Package logrus implements a unified logger with a Logrus driver. See
+// the documentation associated with the Logger, Entry and
+// UnderlyingLogger interfaces for their respective methods.
+//
 package logrus
 
 import (
@@ -16,29 +20,35 @@ import (
 	"github.com/secureworks/logger/log/internal/common"
 )
 
+// Register logger.
 func init() {
 	log.Register("logrus", newLogger)
 }
 
+// newLogger instantiates a new log.Logger with a Logrus driver using
+// the given configuration and Logrus options.
 func newLogger(conf *log.Config, opts ...log.Option) (log.Logger, error) {
-	lrus := logrus.New()
-	lrus.SetNoLock()
+	logrusLogger := logrus.New()
+
 	if conf.Output == nil {
 		conf.Output = os.Stderr
 	}
-	lrus.SetOutput(conf.Output)
-	lrus.SetLevel(lvlToLogrus(conf.Level))
+	logrusLogger.SetOutput(conf.Output)
+	logrusLogger.SetLevel(lvlToLogrus(conf.Level))
+	logrusLogger.SetNoLock()
+
 	if conf.Format == log.JSONFormat {
 		jsonF := &logrus.JSONFormatter{
 			PrettyPrint: conf.LocalDevel,
 		}
-
-		lrus.SetFormatter(jsonF)
+		logrusLogger.SetFormatter(jsonF)
 	}
+
 	if conf.EnableErrStack {
-		lrus.AddHook(errorHook{})
+		logrusLogger.AddHook(errorHook{})
 	}
 
+	// Set up Sentry hook.
 	if conf.Sentry.DSN != "" {
 		tp := sentry.NewHTTPSyncTransport()
 		tp.Timeout = time.Second * 15
@@ -62,37 +72,52 @@ func newLogger(conf *log.Config, opts ...log.Option) (log.Logger, error) {
 			lrusLvls = append(lrusLvls, lvlToLogrus(lvl))
 		}
 
-		lrus.AddHook(sentryhook.New(lrusLvls, sentryhook.WithConverter(sentryConverter)))
+		conv := sentryhook.WithConverter(sentryConverter)
+		logrusLogger.AddHook(sentryhook.New(lrusLvls, conv))
 	}
 
-	logger := &logger{lg: lrus, errStack: conf.EnableErrStack}
+	// Init logger with Logrus and error stack flag and apply options.
+	logger := &logger{lg: logrusLogger, errStack: conf.EnableErrStack}
 	for _, opt := range opts {
 		if err := opt(logger); err != nil {
 			return nil, err
 		}
 	}
-
 	return logger, nil
 }
+
+// Logger implementation.
 
 type logger struct {
 	lg       *logrus.Logger
 	errStack bool
 }
 
+var _ log.Logger = (*logger)(nil)
+var _ log.UnderlyingLogger = (*logger)(nil)
+
 func (l *logger) IsLevelEnabled(lvl log.Level) bool {
 	return l.lg.IsLevelEnabled(lvlToLogrus(lvl))
 }
 
-func (l *logger) newEntry(lvl logrus.Level) *entry {
-	return &entry{
-		ent:      logrus.NewEntry(l.lg),
-		errStack: l.errStack,
-		lvl:      lvl,
-	}
+func (l *logger) WithError(err error) log.Entry {
+	entry := l.Error()
+	return entry.WithError(err)
 }
 
-func (l *logger) Entry(lvl log.Level) log.Entry { return l.newEntry(lvlToLogrus(lvl)) }
+func (l *logger) WithField(key string, val interface{}) log.Entry {
+	entry := l.Entry(0)
+	return entry.WithField(key, val)
+}
+
+func (l *logger) WithFields(fields map[string]interface{}) log.Entry {
+	entry := l.Entry(0)
+	return entry.WithFields(fields)
+}
+
+func (l *logger) Entry(lvl log.Level) log.Entry {
+	return l.newEntry(lvlToLogrus(lvl))
+}
 
 func (l *logger) Trace() log.Entry { return l.newEntry(logrus.TraceLevel) }
 func (l *logger) Debug() log.Entry { return l.newEntry(logrus.DebugLevel) }
@@ -102,21 +127,20 @@ func (l *logger) Error() log.Entry { return l.newEntry(logrus.ErrorLevel) }
 func (l *logger) Panic() log.Entry { return l.newEntry(logrus.PanicLevel) }
 func (l *logger) Fatal() log.Entry { return l.newEntry(logrus.FatalLevel) }
 
-func (l *logger) WithError(err error) log.Entry {
-	ent := l.Error()
-	return ent.WithError(err)
+func (l *logger) WriteCloser(lvl log.Level) io.WriteCloser {
+	return l.lg.WriterLevel(lvlToLogrus(lvl))
 }
 
-func (l *logger) WithField(key string, val interface{}) log.Entry {
-	ent := l.Entry(0)
-	return ent.WithField(key, val)
+// Creates a new entry at the given level.
+func (l *logger) newEntry(lvl logrus.Level) *entry {
+	return &entry{
+		ent:      logrus.NewEntry(l.lg),
+		errStack: l.errStack,
+		lvl:      lvl,
+	}
 }
 
-func (l *logger) WithFields(fields map[string]interface{}) log.Entry {
-	ent := l.Entry(0)
-	return ent.WithFields(fields)
-}
-
+// Map log.Level to internal Logrus log levels.
 func lvlToLogrus(lvl log.Level) logrus.Level {
 	switch lvl {
 	case log.TRACE:
@@ -138,9 +162,7 @@ func lvlToLogrus(lvl log.Level) logrus.Level {
 	}
 }
 
-func (l *logger) WriteCloser(lvl log.Level) io.WriteCloser {
-	return l.lg.WriterLevel(lvlToLogrus(lvl))
-}
+// UnderlyingLogger implementation.
 
 func (l *logger) GetLogger() interface{} {
 	return l.lg
@@ -152,12 +174,22 @@ func (l *logger) SetLogger(iface interface{}) {
 	}
 }
 
+// Entry implementation.
+
 type entry struct {
 	ent      *logrus.Entry
 	lvl      logrus.Level
 	async    bool
 	errStack bool
 	msg      string
+}
+
+var _ log.Entry = (*entry)(nil)
+var _ log.UnderlyingLogger = (*entry)(nil)
+
+func (e *entry) Async() log.Entry {
+	e.async = !e.async
+	return e
 }
 
 func (e *entry) Caller(skip ...int) log.Entry {
@@ -175,28 +207,12 @@ func (e *entry) Caller(skip ...int) log.Entry {
 		return e
 	}
 
-	// Not normal logrus, append to existing field. Even if nil, won't
-	// panic.
+	// Not normal Logrus: append to existing field; nil won't panic.
 	cls, _ := e.ent.Data[log.CallerField].([]string)
 	cls = append(cls, fmt.Sprintf("%s:%d", file, line))
 	e.ent.Data[log.CallerField] = cls
 
 	return e
-}
-
-type multiError struct {
-	errs []error
-}
-
-func (me multiError) Error() string {
-	sb := new(strings.Builder)
-	sb.Grow(len(me.errs) * 32)
-
-	for _, e := range me.errs {
-		fmt.Fprintf(sb, "%v\n", e)
-	}
-
-	return sb.String()
 }
 
 func (e *entry) WithError(errs ...error) log.Entry {
@@ -212,28 +228,22 @@ func (e *entry) WithError(errs ...error) log.Entry {
 	if e.errStack {
 		_, err = common.WithStackTrace(err)
 	}
-
 	return e.WithField(logrus.ErrorKey, err)
 }
 
 func (e *entry) WithField(key string, val interface{}) log.Entry {
-	// This defer relies on the fact that defer's args are eval'd when
-	// defer is called not when the defer'd function is run.
+	// The deferred functions args are eval'd when defer is called not
+	// when the deferred function is run.
 	defer releaseEntry(e.ent.Logger, e.ent)
-
 	e.ent = e.ent.WithField(key, val)
 	return e
 }
 
 func (e *entry) WithFields(fields map[string]interface{}) log.Entry {
 	defer releaseEntry(e.ent.Logger, e.ent)
-
 	e.ent = e.ent.WithFields(fields)
 	return e
 }
-
-// TODO(IB): generics would help with these multi-value/variadic methods
-// 😤. Not gonna use reflection cause that would be too slow.
 
 func (e *entry) WithBool(key string, bls ...bool) log.Entry {
 	if e == nil || len(bls) == 0 {
@@ -244,7 +254,6 @@ func (e *entry) WithBool(key string, bls ...bool) log.Entry {
 	if len(bls) > 1 {
 		i = bls
 	}
-
 	return e.WithField(key, i)
 }
 
@@ -257,7 +266,6 @@ func (e *entry) WithDur(key string, durs ...time.Duration) log.Entry {
 	if len(durs) > 1 {
 		i = durs
 	}
-
 	return e.WithField(key, i)
 }
 
@@ -270,7 +278,6 @@ func (e *entry) WithInt(key string, is ...int) log.Entry {
 	if len(is) > 1 {
 		i = is
 	}
-
 	return e.WithField(key, i)
 }
 
@@ -283,7 +290,6 @@ func (e *entry) WithUint(key string, us ...uint) log.Entry {
 	if len(us) > 1 {
 		i = us
 	}
-
 	return e.WithField(key, i)
 }
 
@@ -297,7 +303,6 @@ func (e *entry) WithStr(key string, strs ...string) log.Entry {
 	if len(strs) > 1 {
 		i = strs
 	}
-
 	return e.WithField(key, i)
 }
 
@@ -311,10 +316,18 @@ func (e *entry) WithTime(key string, ts ...time.Time) log.Entry {
 		i = ts
 	}
 
-	// Avoid using WithTime here from logrus as we don't want to
+	// Avoid using WithTime here from Logrus as we don't want to
 	// unnecessarily override time value.
 	return e.WithField(key, i)
 }
+
+func (e *entry) Trace() log.Entry { e.lvl = logrus.TraceLevel; return e }
+func (e *entry) Debug() log.Entry { e.lvl = logrus.DebugLevel; return e }
+func (e *entry) Info() log.Entry  { e.lvl = logrus.InfoLevel; return e }
+func (e *entry) Warn() log.Entry  { e.lvl = logrus.WarnLevel; return e }
+func (e *entry) Error() log.Entry { e.lvl = logrus.ErrorLevel; return e }
+func (e *entry) Panic() log.Entry { e.lvl = logrus.PanicLevel; return e }
+func (e *entry) Fatal() log.Entry { e.lvl = logrus.FatalLevel; return e }
 
 func (e *entry) Msgf(format string, vals ...interface{}) {
 	e.Msg(fmt.Sprintf(format, vals...))
@@ -326,11 +339,6 @@ func (e *entry) Msg(msg string) {
 	if !e.async {
 		e.Send()
 	}
-}
-
-func (e *entry) Async() log.Entry {
-	e.async = !e.async
-	return e
 }
 
 func (e *entry) Send() {
@@ -352,13 +360,7 @@ func (e *entry) Send() {
 	e.ent = nil
 }
 
-func (e *entry) Trace() log.Entry { e.lvl = logrus.TraceLevel; return e }
-func (e *entry) Debug() log.Entry { e.lvl = logrus.DebugLevel; return e }
-func (e *entry) Info() log.Entry  { e.lvl = logrus.InfoLevel; return e }
-func (e *entry) Warn() log.Entry  { e.lvl = logrus.WarnLevel; return e }
-func (e *entry) Error() log.Entry { e.lvl = logrus.ErrorLevel; return e }
-func (e *entry) Panic() log.Entry { e.lvl = logrus.PanicLevel; return e }
-func (e *entry) Fatal() log.Entry { e.lvl = logrus.FatalLevel; return e }
+// UnderlyingLogger implementation.
 
 func (e *entry) GetLogger() interface{} {
 	return e.ent
@@ -368,4 +370,20 @@ func (e *entry) SetLogger(l interface{}) {
 	if ent, ok := l.(*logrus.Entry); ok {
 		e.ent = ent
 	}
+}
+
+// Multi-error utility implementation.
+type multiError struct {
+	errs []error
+}
+
+func (me multiError) Error() string {
+	sb := new(strings.Builder)
+	sb.Grow(len(me.errs) * 32)
+
+	for _, e := range me.errs {
+		fmt.Fprintf(sb, "%v\n", e)
+	}
+
+	return sb.String()
 }

@@ -138,17 +138,24 @@ func EntryFromCtx(ctx context.Context) Entry {
 // Logger is the minimum interface loggers should implement when used
 // with CTPx packages.
 type Logger interface {
+	// IsLevelEnabled returns true is the level supplied as arg is
+	// enabled.
+	IsLevelEnabled(Level) bool
+
 	// WithError inserts the given error into a new Entry and returns the
 	// Entry.
 	WithError(err error) Entry
+
 	// WithField inserts key & val into a new Entry and returns the Entry.
 	WithField(key string, val interface{}) Entry
+
 	// WithFields inserts the given set of fields into a new Entry and
 	// returns the Entry.
 	WithFields(fields map[string]interface{}) Entry
 
 	// Entry returns a new Entry at the provided log level.
 	Entry(Level) Entry
+
 	// Trace returns a new Entry at TRACE level.
 	Trace() Entry
 	// Debug returns a new Entry at DEBUG level.
@@ -172,10 +179,6 @@ type Logger interface {
 	// output of other loggers or even Readers with the help of
 	// io.TeeReader.
 	WriteCloser(Level) io.WriteCloser
-
-	// IsLevelEnabled returns true is the level supplied as arg is
-	// enabled.
-	IsLevelEnabled(Level) bool
 }
 
 // Entry is the primary interface by which individual log entries are
@@ -185,6 +188,7 @@ type Entry interface {
 	// more than once. If set to asynchronous an Entry implementation
 	// should not log its final message until Send is called.
 	Async() Entry
+
 	// Caller embeds a caller value into the existing Entry. A caller
 	// value is a filepath followed by line number. Skip determines the
 	// number of additional stack frames to ascend when determining the
