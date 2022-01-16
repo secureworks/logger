@@ -21,9 +21,9 @@ func init() {
 	})
 }
 
-// New returns an implementation of Logger that does nothing when its
-// methods are called. This can also be retrieved using "noop" with
-// "Open", though in that case any configuration is ignored.
+// New instantiates a new log.Logger that does nothing when its methods
+// are called. This can also be retrieved using "noop" with log.Open;
+// keep in mind though that any configuration is ignored.
 func New() log.Logger {
 	return noopLogger{}
 }
