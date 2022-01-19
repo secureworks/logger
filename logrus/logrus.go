@@ -25,8 +25,8 @@ func init() {
 	log.Register("logrus", newLogger)
 }
 
-// newLogger instantiates a new log.Logger with a Logrus driver using the
-// given configuration and Logrus options.
+// newLogger instantiates a new log.Logger with a Logrus driver using
+// the given configuration and Logrus options.
 func newLogger(conf *log.Config, opts ...log.Option) (log.Logger, error) {
 	logrusLogger := logrus.New()
 
@@ -78,6 +78,8 @@ func newLogger(conf *log.Config, opts ...log.Option) (log.Logger, error) {
 
 	// Init logger with Logrus and error stack flag and apply options.
 	logger := &logger{lg: logrusLogger, errStack: conf.EnableErrStack}
+
+	// Apply options.
 	for _, opt := range opts {
 		if err := opt(logger); err != nil {
 			return nil, err
@@ -131,6 +133,20 @@ func (l *logger) WriteCloser(lvl log.Level) io.WriteCloser {
 	return l.lg.WriterLevel(lvlToLogrus(lvl))
 }
 
+// UnderlyingLogger implementation.
+
+func (l *logger) GetLogger() interface{} {
+	return l.lg
+}
+
+func (l *logger) SetLogger(iface interface{}) {
+	if lg, ok := iface.(*logrus.Logger); ok {
+		l.lg = lg
+	}
+}
+
+// Logger utility functions.
+
 // Creates a new entry at the given level.
 func (l *logger) newEntry(lvl logrus.Level) *entry {
 	return &entry{
@@ -159,18 +175,6 @@ func lvlToLogrus(lvl log.Level) logrus.Level {
 		return logrus.FatalLevel
 	default:
 		return logrus.InfoLevel
-	}
-}
-
-// UnderlyingLogger implementation.
-
-func (l *logger) GetLogger() interface{} {
-	return l.lg
-}
-
-func (l *logger) SetLogger(iface interface{}) {
-	if lg, ok := iface.(*logrus.Logger); ok {
-		l.lg = lg
 	}
 }
 

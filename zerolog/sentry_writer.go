@@ -12,10 +12,10 @@ import (
 	"github.com/secureworks/logger/log/internal/common"
 )
 
-// An unfortunate but necessary type, as zerolog's hook interface is
-// next to useless for extracting data from. Older sentry writers used
+// An unfortunate but necessary type, as Zerolog's hook interface is
+// not conducive to data extraction. Older Sentry writers used
 // raven-go instead of sentry-go and zerolog authors themselves seem to
-// prefer using io.Writer instead of the hook interface. So here we are.
+// prefer using io.Writer instead of the hook interface. See also:
 //   - https://github.com/rs/zerolog/blob/72acd6cfe8bbbf5c52bfc805a3889c6941499c95/journald/journald.go#L37
 //   - https://github.com/rs/zerolog/blob/72acd6cfe8bbbf5c52bfc805a3889c6941499c95/console.go#L86
 //   - https://github.com/rs/zerolog/issues/93
@@ -27,6 +27,9 @@ type sentryWriter struct {
 	lvlSet   map[zerolog.Level]bool
 }
 
+// Create a new Sentry writer attached to CurrentHub for the given set
+// of levels. This writer is a peer to Zerolog in the logger
+// implementation, skipping the Zerolog hook system entirely.
 func newSentryWriter(lvls ...log.Level) *sentryWriter {
 	lvlSet := make(map[zerolog.Level]bool, len(lvls))
 	for _, lvl := range lvls {
@@ -34,148 +37,131 @@ func newSentryWriter(lvls ...log.Level) *sentryWriter {
 	}
 
 	return &sentryWriter{
-		lvlField: []byte(`"` + zerolog.LevelFieldName + `"`),
+		lvlField: []byte(fmt.Sprintf(`"%s"`, zerolog.LevelFieldName)),
 		hub:      sentry.CurrentHub(),
 		lvlSet:   lvlSet,
 	}
 }
 
-func (sw *sentryWriter) Write(p []byte) (n int, err error) {
-	n = len(p)
-	zlvl, ok := sw.checkLvl(p)
+// Write parses the message sent to Zerolog, and if it warrants sending
+// an error to Sentry then it extracts the necessary information. It is
+// a full write-to-Sentry implementation.
+func (sw *sentryWriter) Write(msg []byte) (n int, err error) {
+	n = len(msg)
+
+	// Get the log level, and if it meets the threshold for Sentry.
+	zlvl, ok := sw.checkLevel(msg)
 	if !ok {
 		return
 	}
 
-	dat := make(map[string]interface{})
-	json.Unmarshal(p, &dat)
-
-	delete(dat, zerolog.LevelFieldName)
-	if len(dat) == 0 {
+	// Extract JSON log entry into a basic container.
+	data := make(map[string]interface{})
+	json.Unmarshal(msg, &data)
+	delete(data, zerolog.LevelFieldName) // Remove the level field.
+	if len(data) == 0 {
 		return
 	}
 
 	event := sentry.NewEvent()
-	event.Level = zlvlToSentry(zlvl)
+	event.Level = zerologLevelToSentry(zlvl)
 
-	if msg, ok := dat[zerolog.MessageFieldName].(string); ok {
+	// Get the log message if available.
+	if msg, ok := data[zerolog.MessageFieldName].(string); ok {
 		event.Message = msg
-		delete(dat, zerolog.MessageFieldName)
+		delete(data, zerolog.MessageFieldName)
 	}
 
-	// We should just never send "Exception"'s to Sentry on principle.
-	var exe *sentry.Exception
-
-	if iface, ok := dat[zerolog.ErrorFieldName]; ok {
-		es, ok := iface.(string)
-		if !ok {
-			es = fmt.Sprintf("%v", iface)
-		}
-
-		delete(dat, zerolog.ErrorFieldName)
-		exe = &sentry.Exception{
-			Value: es,
-		}
+	// Get the log error and stack trace (if available) and push on to
+	// Sentry event Exception field if found.
+	exc := sentryExceptionFromFields(
+		data, zerolog.ErrorFieldName, zerolog.ErrorStackFieldName)
+	if exc != nil {
+		event.Exception = append(event.Exception, *exc)
 	}
 
-	if iface, ok := dat[zerolog.ErrorStackFieldName].([]interface{}); ok {
-		frames := common.ParseFrames(iface...)
-
-		if len(frames) > 0 {
-			delete(dat, zerolog.ErrorStackFieldName)
-			if exe == nil {
-				exe = new(sentry.Exception)
-			}
-
-			exe.Stacktrace = &sentry.Stacktrace{
-				Frames: frames,
-			}
-		}
-	}
-
-	if exe != nil {
-		event.Exception = append(event.Exception, *exe)
-		exe = nil
-	}
-
-	if iface, ok := dat[log.PanicValue]; ok {
-		pv, ok := iface.(string)
-		if !ok {
-			pv = fmt.Sprintf("%v", pv)
-		}
-
-		delete(dat, log.PanicValue)
-		exe = &sentry.Exception{
-			Value: pv,
-		}
-	}
-
-	if iface, ok := dat[log.PanicStack].([]interface{}); ok {
-		frames := common.ParseFrames(iface...)
-
-		if len(frames) > 0 {
-			delete(dat, log.PanicStack)
-			if exe == nil {
-				exe = new(sentry.Exception)
-			}
-
-			exe.Stacktrace = &sentry.Stacktrace{
-				Frames: frames,
-			}
-		}
-	}
-
-	if exe != nil {
-		event.Exception = append(event.Exception, *exe)
-		exe = nil
+	// Get the log panic and stack trace (if available). Push on to the
+	// Sentry event Exception field if found.
+	exc = sentryExceptionFromFields(
+		data, log.PanicValue, log.PanicStack)
+	if exc != nil {
+		event.Exception = append(event.Exception, *exc)
 	}
 
 	// Additional values as "Extra" vs "Tags" vs "Breadcrumbs."
-	event.Extra = dat
+	event.Extra = data
 	sw.hub.CaptureEvent(event)
 
 	return
 }
 
-func (sw *sentryWriter) checkLvl(p []byte) (zlvl zerolog.Level, shouldSend bool) {
-	if p == nil || len(p) < len(sw.lvlField) {
-		return
+// checkLevel looks up the level of the message given in bytes, and
+// returns if it warrants being sent to Sentry.
+func (sw *sentryWriter) checkLevel(msg []byte) (zerolog.Level, bool) {
+	if msg == nil || len(msg) < len(sw.lvlField) {
+		return 0, false
 	}
 
-	// We have it on authority that the level field will be in the latter
-	// part of the message.
-	i := bytes.Index(p[len(p)/2:], sw.lvlField)
+	// The level field will usually be in the latter part of the message.
+	i := bytes.Index(msg[len(msg)/2:], sw.lvlField)
 	if i == -1 {
 		// Try the full slice, wasn't in the latter half (or was split
 		// between halfs).
-		i = bytes.Index(p, sw.lvlField)
+		i = bytes.Index(msg, sw.lvlField)
 	} else {
-		// Add back the len we skipped.
-		i += (len(p) / 2)
+		i += (len(msg) / 2) // Found in back: add the len we skipped.
 	}
-
-	// Still don't have level field?
 	if i == -1 {
-		return
+		return 0, false // Level not found, do not send error to Sentry.
 	}
 
-	startingOffset := i + len(sw.lvlField) + 2
-	if startingOffset >= len(p) {
-		return
+	// Parse the level field.
+	startingOffset := i + len(sw.lvlField) + 2 // Ie: `...level":`
+	if startingOffset >= len(msg) {
+		return 0, false
 	}
-
-	i = bytes.IndexByte(p[startingOffset:], '"')
+	i = bytes.IndexByte(msg[startingOffset:], '"')
 	if i == -1 {
-		return
+		return 0, false
 	}
-
 	i += startingOffset
-	lvl, err := zerolog.ParseLevel(string(p[startingOffset:i]))
-
+	lvl, err := zerolog.ParseLevel(string(msg[startingOffset:i]))
 	return lvl, err == nil && sw.lvlSet[lvl]
 }
 
-func zlvlToSentry(lvl zerolog.Level) sentry.Level {
+// sentryExceptionFromFields attempts to structure a Sentry Exception
+// from an error message and/or stack trace.
+func sentryExceptionFromFields(data map[string]interface{}, msgf string, stf string) *sentry.Exception {
+	var exc *sentry.Exception
+
+	// Look up error message field.
+	if iface, ok := data[msgf]; ok {
+		pv, ok := iface.(string)
+		if !ok {
+			pv = fmt.Sprintf("%v", pv)
+		}
+		delete(data, msgf)
+		exc = &sentry.Exception{Value: pv}
+	}
+
+	// Either add a stack trace or create an exception with a stack trace
+	// if necessary.
+	if iface, ok := data[stf].([]interface{}); ok {
+		frames := common.ParseFrames(iface...)
+		if len(frames) > 0 {
+			delete(data, stf)
+			if exc == nil {
+				exc = new(sentry.Exception)
+			}
+			exc.Stacktrace = &sentry.Stacktrace{Frames: frames}
+		}
+	}
+
+	return exc
+}
+
+// Map zerolog log levels to Sentry log levels.
+func zerologLevelToSentry(lvl zerolog.Level) sentry.Level {
 	switch lvl {
 	case zerolog.TraceLevel, zerolog.DebugLevel:
 		return sentry.LevelDebug

@@ -60,12 +60,12 @@ func ParseFrame(str string) sentry.Frame {
 // used with JSON marshaling; otherwise call ParseFrame directly.
 func ParseFrames(vals ...interface{}) []sentry.Frame {
 	frames := make([]sentry.Frame, 0, len(vals))
-	for i, v := range vals {
+	for _, v := range vals {
 		s, ok := v.(string)
 		if !ok {
 			break
 		}
-		frames[i] = ParseFrame(s)
+		frames = append(frames, ParseFrame(s))
 	}
 	return frames
 }

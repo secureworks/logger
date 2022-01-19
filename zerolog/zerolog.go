@@ -32,6 +32,8 @@ func init() {
 	log.Register("zerolog", newLogger)
 }
 
+// newLogger instantiates a new log.Logger with a Zerolog driver using
+// the given configuration and Zerolog options.
 func newLogger(conf *log.Config, opts ...log.Option) (log.Logger, error) {
 	zlvl := lvlToZerolog(conf.Level)
 	logger := &logger{
@@ -40,10 +42,14 @@ func newLogger(conf *log.Config, opts ...log.Option) (log.Logger, error) {
 	}
 
 	output := conf.Output
+	if output == nil {
+		output = os.Stderr
+	}
+
+	// Set up Sentry writer.
 	if conf.Sentry.DSN != "" {
 		tp := sentry.NewHTTPSyncTransport()
 		tp.Timeout = time.Second * 15
-
 		opts := sentry.ClientOptions{
 			Dsn:              conf.Sentry.DSN,
 			Release:          conf.Sentry.Release,
@@ -53,25 +59,28 @@ func newLogger(conf *log.Config, opts ...log.Option) (log.Logger, error) {
 			AttachStacktrace: conf.EnableErrStack,
 			Transport:        tp,
 		}
-
 		if err := common.InitSentry(opts); err != nil {
 			return nil, err
 		}
-
-		output = io.MultiWriter(output, newSentryWriter(conf.Sentry.Levels...))
+		output = io.MultiWriter(
+			output,
+			newSentryWriter(conf.Sentry.Levels...),
+		)
 	}
 
 	zlog := zerolog.New(output).Level(zlvl)
 	logger.lg = &zlog
 
+	// Apply options.
 	for _, opt := range opts {
 		if err := opt(logger); err != nil {
 			return nil, err
 		}
 	}
-
 	return logger, nil
 }
+
+// Logger implementation.
 
 type logger struct {
 	lg       *zerolog.Logger
@@ -79,12 +88,11 @@ type logger struct {
 	errStack bool
 }
 
+var _ log.Logger = (*logger)(nil)
+var _ log.UnderlyingLogger = (*logger)(nil)
+
 func (l *logger) IsLevelEnabled(lvl log.Level) bool {
 	return lvlToZerolog(lvl) <= l.lvl
-}
-
-func (l *logger) notValid() bool {
-	return l == nil || l.lg == nil
 }
 
 func (l *logger) WithError(err error) log.Entry {
@@ -99,6 +107,48 @@ func (l *logger) WithFields(fields map[string]interface{}) log.Entry {
 	return l.Entry(0).WithFields(fields)
 }
 
+func (l *logger) Entry(lvl log.Level) log.Entry {
+	return l.newEntry(lvlToZerolog(lvl))
+}
+
+func (l *logger) Trace() log.Entry { return l.newEntry(zerolog.TraceLevel) }
+func (l *logger) Debug() log.Entry { return l.newEntry(zerolog.DebugLevel) }
+func (l *logger) Info() log.Entry  { return l.newEntry(zerolog.InfoLevel) }
+func (l *logger) Warn() log.Entry  { return l.newEntry(zerolog.WarnLevel) }
+func (l *logger) Error() log.Entry { return l.newEntry(zerolog.ErrorLevel) }
+func (l *logger) Panic() log.Entry { return l.newEntry(zerolog.PanicLevel) }
+func (l *logger) Fatal() log.Entry { return l.newEntry(zerolog.FatalLevel) }
+
+func (l *logger) WriteCloser(lvl log.Level) io.WriteCloser {
+	return writeLevelCloser{log: l, lvl: lvl}
+}
+
+// UnderlyingLogger implementation.
+
+func (l *logger) GetLogger() interface{} {
+	if l.notValid() {
+		return nil
+	}
+	return l.lg
+}
+
+func (l *logger) SetLogger(iface interface{}) {
+	if lg, ok := iface.(*zerolog.Logger); ok && !l.notValid() {
+		l.lg = lg
+	}
+}
+
+// Zerolog-specific methods.
+
+// An assertable method/interface if someone wants to disable zerolog
+// events at runtime.
+func (l *logger) DisabledEntry() log.Entry {
+	return (*entry)(nil)
+}
+
+// Logger utility functions.
+
+// Creates a new entry at the given level.
 func (l *logger) newEntry(lvl zerolog.Level) log.Entry {
 	if l.notValid() {
 		return l.DisabledEntry()
@@ -112,7 +162,6 @@ func (l *logger) newEntry(lvl zerolog.Level) log.Entry {
 	//
 	// TODO(IB): Only using NoLevel silently breaks zerolog.Hook interface.
 	ent := l.lg.WithLevel(zerolog.NoLevel)
-
 	if l.errStack {
 		ent = ent.Stack()
 	}
@@ -125,6 +174,11 @@ func (l *logger) newEntry(lvl zerolog.Level) log.Entry {
 	}
 }
 
+func (l *logger) notValid() bool {
+	return l == nil || l.lg == nil
+}
+
+// Map log.Level to internal Zerolog log levels.
 func lvlToZerolog(lvl log.Level) zerolog.Level {
 	switch lvl {
 	case log.TRACE:
@@ -146,17 +200,8 @@ func lvlToZerolog(lvl log.Level) zerolog.Level {
 	}
 }
 
-func (l *logger) Entry(lvl log.Level) log.Entry { return l.newEntry(lvlToZerolog(lvl)) }
+// WriteCloser hook implementation.
 
-func (l *logger) Trace() log.Entry { return l.newEntry(zerolog.TraceLevel) }
-func (l *logger) Debug() log.Entry { return l.newEntry(zerolog.DebugLevel) }
-func (l *logger) Info() log.Entry  { return l.newEntry(zerolog.InfoLevel) }
-func (l *logger) Warn() log.Entry  { return l.newEntry(zerolog.WarnLevel) }
-func (l *logger) Error() log.Entry { return l.newEntry(zerolog.ErrorLevel) }
-func (l *logger) Panic() log.Entry { return l.newEntry(zerolog.PanicLevel) }
-func (l *logger) Fatal() log.Entry { return l.newEntry(zerolog.FatalLevel) }
-
-// TODO(IB): could refactor this if useful anywhere else.
 type writeLevelCloser struct {
 	log log.Logger
 	lvl log.Level
@@ -178,29 +223,7 @@ func (wlc writeLevelCloser) Close() error {
 	return nil
 }
 
-func (l *logger) WriteCloser(lvl log.Level) io.WriteCloser {
-	return writeLevelCloser{log: l, lvl: lvl}
-}
-
-// An assertable method/interface if someone wants to disable zerolog
-// events at runtime.
-func (l *logger) DisabledEntry() log.Entry {
-	return (*entry)(nil)
-}
-
-func (l *logger) GetLogger() interface{} {
-	if l.notValid() {
-		return nil
-	}
-
-	return l.lg
-}
-
-func (l *logger) SetLogger(iface interface{}) {
-	if lg, ok := iface.(*zerolog.Logger); ok && !l.notValid() {
-		l.lg = lg
-	}
-}
+// Entry implementation.
 
 type entry struct {
 	ent    *zerolog.Event
@@ -211,19 +234,13 @@ type entry struct {
 	lvl    zerolog.Level
 }
 
-func (e *entry) notValid() bool {
-	return e == nil || e.ent == nil
-}
-
-func (e *entry) enabled() bool {
-	return !e.notValid() && e.lvl >= e.loglvl
-}
+var _ log.Entry = (*entry)(nil)
+var _ log.UnderlyingLogger = (*entry)(nil)
 
 func (e *entry) Async() log.Entry {
 	if e.notValid() {
 		return e
 	}
-
 	e.async = !e.async
 	return e
 }
@@ -249,7 +266,6 @@ func (e *entry) Caller(skip ...int) log.Entry {
 
 	// TODO(IB): Use zerolog.CallerMarshalFunc?
 	e.caller = append(e.caller, fmt.Sprintf("%s:%d", file, line))
-
 	return e
 }
 
@@ -264,7 +280,6 @@ func (e *entry) WithError(errs ...error) log.Entry {
 	} else {
 		e.ent = e.ent.Errs(zerolog.ErrorFieldName, errs)
 	}
-
 	return e
 }
 
@@ -272,9 +287,7 @@ func (e *entry) WithField(key string, val interface{}) log.Entry {
 	if e.notValid() {
 		return e
 	}
-
 	e.ent = e.ent.Interface(key, val)
-
 	return e
 }
 
@@ -282,9 +295,7 @@ func (e *entry) WithFields(fields map[string]interface{}) log.Entry {
 	if e.notValid() || len(fields) == 0 {
 		return e
 	}
-
 	e.ent = e.ent.Fields(fields)
-
 	return e
 }
 
@@ -299,7 +310,6 @@ func (e *entry) WithBool(key string, bls ...bool) log.Entry {
 	} else {
 		e.ent = e.ent.Bools(key, bls)
 	}
-
 	return e
 }
 
@@ -314,7 +324,6 @@ func (e *entry) WithDur(key string, durs ...time.Duration) log.Entry {
 	} else {
 		e.ent = e.ent.Durs(key, durs)
 	}
-
 	return e
 }
 
@@ -329,7 +338,6 @@ func (e *entry) WithInt(key string, is ...int) log.Entry {
 	} else {
 		e.ent = e.ent.Ints(key, is)
 	}
-
 	return e
 }
 
@@ -344,7 +352,6 @@ func (e *entry) WithUint(key string, us ...uint) log.Entry {
 	} else {
 		e.ent = e.ent.Uints(key, us)
 	}
-
 	return e
 }
 
@@ -359,7 +366,6 @@ func (e *entry) WithStr(key string, strs ...string) log.Entry {
 	} else {
 		e.ent = e.ent.Strs(key, strs)
 	}
-
 	return e
 }
 
@@ -374,16 +380,6 @@ func (e *entry) WithTime(key string, ts ...time.Time) log.Entry {
 	} else {
 		e.ent = e.ent.Times(key, ts)
 	}
-
-	return e
-}
-
-func (e *entry) setLevel(lvl zerolog.Level) log.Entry {
-	if e.notValid() {
-		return e
-	}
-
-	e.lvl = lvl
 	return e
 }
 
@@ -405,7 +401,6 @@ func (e *entry) Msg(msg string) {
 	}
 
 	e.msg = msg
-
 	if !e.async {
 		e.Send()
 	}
@@ -426,7 +421,6 @@ func (e *entry) Send() {
 	if len(e.caller) > 0 {
 		e.ent = e.ent.Strs(log.CallerField, e.caller)
 	}
-
 	e.ent = e.ent.Str(zerolog.LevelFieldName, zerolog.LevelFieldMarshalFunc(e.lvl))
 	e.ent.Msg(e.msg)
 
@@ -437,6 +431,24 @@ func (e *entry) Send() {
 		os.Exit(1)
 	}
 }
+
+// UnderlyingLogger implementation.
+
+func (e *entry) GetLogger() interface{} {
+	if e.notValid() {
+		return nil
+	}
+
+	return e.ent
+}
+
+func (e *entry) SetLogger(l interface{}) {
+	if ent, ok := l.(*zerolog.Event); ok && !e.notValid() {
+		e.ent = ent
+	}
+}
+
+// Zerolog-specific methods.
 
 // An assertable method/interface if someone wants to disable zerolog
 // events at runtime.
@@ -454,16 +466,20 @@ func (e *entry) DisabledEntry() log.Entry {
 	return e
 }
 
-func (e *entry) GetLogger() interface{} {
-	if e.notValid() {
-		return nil
-	}
+// Entry utility functions.
 
-	return e.ent
+func (e *entry) notValid() bool {
+	return e == nil || e.ent == nil
 }
 
-func (e *entry) SetLogger(l interface{}) {
-	if ent, ok := l.(*zerolog.Event); ok && !e.notValid() {
-		e.ent = ent
+func (e *entry) enabled() bool {
+	return !e.notValid() && e.lvl >= e.loglvl
+}
+
+func (e *entry) setLevel(lvl zerolog.Level) log.Entry {
+	if e.notValid() {
+		return e
 	}
+	e.lvl = lvl
+	return e
 }
