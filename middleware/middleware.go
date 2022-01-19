@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/secureworks/logger/internal/common"
 	"github.com/secureworks/logger/log"
-	"github.com/secureworks/logger/log/internal/common"
 )
 
 // NewHTTPServer returns an http.Server with its BaseContext set to

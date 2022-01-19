@@ -8,8 +8,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
+	"github.com/secureworks/logger/internal/common"
 	"github.com/secureworks/logger/log"
-	"github.com/secureworks/logger/log/internal/common"
 )
 
 // The sentryhook library provides a basic Logrus hook for sending

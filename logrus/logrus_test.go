@@ -11,7 +11,7 @@ import (
 	"github.com/secureworks/logger/log"
 	"github.com/stretchr/testify/require"
 
-	"github.com/secureworks/logger/log/internal/testutils"
+	"github.com/secureworks/logger/internal/testutils"
 )
 
 const (

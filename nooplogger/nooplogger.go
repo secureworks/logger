@@ -1,11 +1,11 @@
-// Package noop implements a unified logger without a driver. See the
-// documentation associated with the Logger and Entry interfaces for
+// Package nooplogger implements a unified logger without a driver. See
+// the documentation associated with the Logger and Entry interfaces for
 // their respective methods.
 //
 // Noop loggers can be used for testing or to satisfy a logger
 // expectation without actually writing any logs.
 //
-package noop
+package nooplogger
 
 import (
 	"io"

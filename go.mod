@@ -1,4 +1,4 @@
-module github.com/secureworks/logger/log
+module github.com/secureworks/logger
 
 go 1.17
 

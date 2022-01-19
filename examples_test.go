@@ -1,4 +1,4 @@
-package log_test
+package logger_test
 
 import (
 	"fmt"
@@ -7,11 +7,8 @@ import (
 	"time"
 
 	"github.com/secureworks/logger/log"
-	"github.com/secureworks/logger/log/middleware"
+	"github.com/secureworks/logger/middleware"
 )
-
-// These are UNUSED and only for making this example compile.
-var e http.Handler
 
 func Example() {
 	// If config is passed as nil to log.Open then this is used.
@@ -35,7 +32,7 @@ func Example() {
 	}
 
 	// Where e is your base handler, echo and buffalo have adapters.
-	handler := middleware.NewHTTPRequestMiddleware(logger, log.INFO, nil)(e)
+	handler := middleware.NewHTTPRequestMiddleware(logger, log.INFO, nil)(http.Handler(nil))
 
 	// // Setup logger for use by http.Server or anything that can use an
 	// // io.Writer.

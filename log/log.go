@@ -1,13 +1,40 @@
+// Package log provides a unified interface for loggers such as logrus
+// or zerolog, along with Sentry support and other custom options.
+//
 package log
 
 import (
-	"context"
 	"io"
 	"strings"
 	"time"
 )
 
-// =====================================================================
+// Log levels for the unified interface. Underlying logger
+// implementations must support these levels.
+const (
+	// TRACE Level.
+	TRACE Level = iota + -2
+
+	// DEBUG Level.
+	DEBUG
+
+	// INFO Level; this is the default (zero value).
+	INFO
+
+	// WARN Level.
+	WARN
+
+	// ERROR Level.
+	ERROR
+
+	// PANIC Level; note, depending on usage this will cause the logger to
+	// panic.
+	PANIC
+
+	// FATAL Level; note, depending on usage this will cause the logger to
+	// force a program exit.
+	FATAL
+)
 
 // Level is the base type for logging levels supported by this package.
 type Level int
@@ -48,26 +75,8 @@ func (l Level) IsEnabled(en Level) bool {
 	return l.IsValid() && en.IsValid() && l >= en
 }
 
-const (
-	// TRACE Level.
-	TRACE Level = iota + -2
-	// DEBUG Level.
-	DEBUG
-	// INFO Level; this is the default (zero value).
-	INFO
-	// WARN Level.
-	WARN
-	// ERROR Level.
-	ERROR
-	// PANIC Level; note, depending on usage this will cause the logger to
-	// panic.
-	PANIC
-	// FATAL Level; note, depending on usage this will cause the logger to
-	// force a program exit.
-	FATAL
-)
-
-// AllLevels is a convenience function returning all levels as a slice.
+// AllLevels is a convenience function returning all levels as a slice,
+// ordered from lowest to highest precedence.
 func AllLevels() []Level {
 	return []Level{
 		TRACE,
@@ -80,21 +89,21 @@ func AllLevels() []Level {
 	}
 }
 
-// =====================================================================
+// Supported logging formats for the unified interface. To allow
+// agnostic mixing of implmentations we default to JSON-formatting.
+const (
+	// JSONFormat is the default (zero value) format for loggers
+	// registered with this package.
+	JSONFormat LoggerFormat = 0
+
+	// ImplementationDefaultFormat leaves the format up to the logger
+	// implementation default.
+	ImplementationDefaultFormat LoggerFormat = -1
+)
 
 // LoggerFormat is the base type for logging formats supported by this
 // package.
 type LoggerFormat int
-
-const (
-	// ImplementationDefaultFormat leaves the format up to the logger
-	// implementation default.
-	ImplementationDefaultFormat LoggerFormat = -1
-
-	// JSONFormat is the default (zero value) format for loggers
-	// registered with this package.
-	JSONFormat LoggerFormat = 0
-)
 
 // IsValid checks if a logger format is valid.
 func (l LoggerFormat) IsValid() bool {
@@ -106,43 +115,10 @@ func (l LoggerFormat) IsValid() bool {
 	}
 }
 
-// =====================================================================
-
-type ctxKey int
-
-const (
-	// LoggerKey is the key value to use with context.Context for Logger
-	// put and retrieval.
-	LoggerKey ctxKey = iota + 1
-	// EntryKey is the key value to use with context.Context for Logger
-	// put and retrieval.
-	EntryKey
-)
-
-// CtxWithLogger returns a context with Logger l as its value.
-func CtxWithLogger(ctx context.Context, l Logger) context.Context {
-	return context.WithValue(ctx, LoggerKey, l)
-}
-
-// LoggerFromCtx returns the Logger in ctx, or nil if none exists.
-func LoggerFromCtx(ctx context.Context) Logger {
-	l, _ := ctx.Value(LoggerKey).(Logger)
-	return l
-}
-
-// CtxWithEntry returns a context with Entry e as its value.
-func CtxWithEntry(ctx context.Context, e Entry) context.Context {
-	return context.WithValue(ctx, EntryKey, e)
-}
-
-// EntryFromCtx returns the Entry in ctx, or nil if none exists.
-func EntryFromCtx(ctx context.Context) Entry {
-	e, _ := ctx.Value(EntryKey).(Entry)
-	return e
-}
-
-// =====================================================================
-
+// Keys for standard logging fields. These keys can be used as map keys,
+// JSON field names, or logger-implementation specific identifiers. By
+// regularizing them we can make better assumptions about where to find
+// and extract them.
 const (
 	// ReqDuration is a key for Logger data concerning HTTP request
 	// logging.
@@ -175,16 +151,7 @@ const (
 	StackField = "stack"
 )
 
-// =====================================================================
-
-// UnderlyingLogger is an escape hatch allowing Loggers registered with
-// this package the option to return their underlying implementation, as
-// well as reset it. Note this is currently required for CustomOption's
-// to work.
-type UnderlyingLogger interface {
-	GetLogger() interface{}
-	SetLogger(interface{})
-}
+// Unified interface definitions.
 
 // Logger is the minimum interface loggers should implement when used
 // with CTPx packages.
@@ -193,8 +160,6 @@ type Logger interface {
 	// enabled.
 	IsLevelEnabled(Level) bool
 
-	// Pipe input to the log: ...
-
 	// WriteCloser returns an io.Writer that when written to writes logs
 	// at the given level. It is the callers responsibility to call Close
 	// when finished. This is particularly useful for redirecting the
@@ -202,20 +167,17 @@ type Logger interface {
 	// io.TeeReader.
 	WriteCloser(Level) io.WriteCloser
 
-	// Create a new log entry and embed field data: ...
-
-	// WithError inserts the given error into a new Entry and returns the
+	// WithError attaches the given error into a new Entry and returns the
 	// Entry.
 	WithError(err error) Entry
 
-	// WithField inserts key & val into a new Entry and returns the Entry.
-	WithField(key string, val interface{}) Entry
+	// WithField inserts the key and value into a new Entry (as tags or
+	// metadata information) and returns the Entry.
+	WithField(key string, value interface{}) Entry
 
 	// WithFields inserts the given set of fields into a new Entry and
 	// returns the Entry.
 	WithFields(fields map[string]interface{}) Entry
-
-	// Create a new log entry: ...
 
 	// Entry returns a new Entry at the provided log level.
 	Entry(Level) Entry
@@ -257,8 +219,6 @@ type Entry interface {
 	// than once.
 	Send()
 
-	// Set log message and send: ...
-
 	// Msgf formats and sets the final log message for this Entry. It will
 	// also send the message if Async has not been set.
 	Msgf(string, ...interface{})
@@ -266,8 +226,6 @@ type Entry interface {
 	// Msg sets the final log message for this Entry. It will also send
 	// the message if Async has not been set.
 	Msg(msg string)
-
-	// Embed field data into entry: ...
 
 	// Caller embeds a caller value into the existing Entry. A caller
 	// value is a filepath followed by line number. Skip determines the
@@ -278,57 +236,80 @@ type Entry interface {
 	// trace.
 	Caller(skip ...int) Entry
 
-	// WithError ... TODO (multierror not multiple errors...)
+	// WithError attaches the given errors into a new Entry and returns
+	// the Entry. Depending on the logger implementation, multiple errors
+	// may be inserted as a slice of errors or a single multi-error.
+	// Calling the method more than once will overwrite the attached
+	// error(s) and not append them.
 	WithError(errs ...error) Entry
 
-	// WithField ... TODO
-	WithField(key string, val interface{}) Entry
+	// WithField inserts the key and value into the Entry (as tags or
+	// metadata information) and returns the Entry.
+	WithField(key string, value interface{}) Entry
 
-	// WithFields ... TODO
+	// WithFields inserts the given set of fields into the Entry and
+	// returns the Entry.
 	WithFields(fields map[string]interface{}) Entry
 
-	// WithBool ... TODO
-	WithBool(key string, bls ...bool) Entry
-
-	// WithDur ... TODO
-	WithDur(key string, durs ...time.Duration) Entry
-
-	// WithInt ... TODO
-	WithInt(key string, is ...int) Entry
-
-	// WithUint ... TODO
-	WithUint(key string, us ...uint) Entry
-
-	// WithStr ... TODO
+	// WithStr is a type-safe convenience for injecting a string (or
+	// strings, how they are stored is implmentation-specific) field.
 	WithStr(key string, strs ...string) Entry
 
-	// WithTime adds the respective time values to the Entry at the given
-	// key. Note that many loggers add a "time" key automatically and time
+	// WithBool is a type-safe convenience for injecting a Boolean (or
+	// Booleans, how they are stored is implmentation-specific) field.
+	WithBool(key string, bls ...bool) Entry
+
+	// WithDur is a type-safe convenience for injecting a time.Duration
+	// (or time.Durations, how they are stored is implmentation-specific)
+	// field.
+	WithDur(key string, durs ...time.Duration) Entry
+
+	// WithInt is a type-safe convenience for injecting an integer (or
+	// integers, how they are stored is implmentation-specific) field.
+	WithInt(key string, is ...int) Entry
+
+	// WithUint is a type-safe convenience for injecting an unsigned
+	// integer (or unsigned integers, how they are stored is
+	// implmentation-specific) field.
+	WithUint(key string, us ...uint) Entry
+
+	// WithUint is a type-safe convenience for injecting a time.Time (or
+	// time.Times, how they are stored is implmentation-specific) field.
+	//
+	// NOTE(IB): many loggers add a "time" key automatically and time
 	// formatting may be dependant on configuration or logger choice.
 	WithTime(key string, ts ...time.Time) Entry
 
-	// Create a new log entry: ...
-
-	// Trace returns a new Entry at TRACE level.
+	// Trace updates the Entry's level to TRACE.
 	Trace() Entry
 
-	// Debug returns a new Entry at DEBUG level.
+	// Debug updates the Entry's level to DEBUG.
 	Debug() Entry
 
-	// Info returns a new Entry at INFO level.
+	// Info updates the Entry's level to INFO.
 	Info() Entry
 
-	// Warn returns a new Entry at WARN level.
+	// Warn updates the Entry's level to WARN.
 	Warn() Entry
 
-	// Error returns a new Entry at ERROR level.
+	// Error updates the Entry's level to ERROR.
 	Error() Entry
 
-	// Panic returns a new Entry at PANIC level. Implementations should
+	// Panic updates the Entry's level to PANIC. Implementations should
 	// panic once the final message for the Entry is logged.
 	Panic() Entry
 
-	// Fatal returns a new Entry at FATAL level. Implementations should
+	// Fatal updates the Entry's level to FATAL. Implementations should
 	// exit non-zero once the final message for the Entry is logged.
 	Fatal() Entry
+}
+
+// UnderlyingLogger is an escape hatch allowing Loggers registered with
+// this package the option to return their underlying implementation, as
+// well as reset it.
+//
+// NOTE(IB): this is currently required for CustomOptions to work.
+type UnderlyingLogger interface {
+	GetLogger() interface{}
+	SetLogger(interface{})
 }

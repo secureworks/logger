@@ -16,3 +16,6 @@
 
 # Go workspace file
 go.work
+
+# Override common global .gitignore setting to hide logs.
+!log/*

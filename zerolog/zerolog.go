@@ -14,8 +14,8 @@ import (
 	"github.com/getsentry/sentry-go"
 	"github.com/rs/zerolog"
 
+	"github.com/secureworks/logger/internal/common"
 	"github.com/secureworks/logger/log"
-	"github.com/secureworks/logger/log/internal/common"
 )
 
 // Register logger.

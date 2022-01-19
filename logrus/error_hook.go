@@ -3,8 +3,8 @@ package logrus
 import (
 	"github.com/sirupsen/logrus"
 
+	"github.com/secureworks/logger/internal/common"
 	"github.com/secureworks/logger/log"
-	"github.com/secureworks/logger/log/internal/common"
 )
 
 // Implements a Logrus hook (https://github.com/sirupsen/logrus#hooks)

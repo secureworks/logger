@@ -9,10 +9,10 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/secureworks/logger/internal/testutils"
 	"github.com/secureworks/logger/log"
-	"github.com/secureworks/logger/log/internal/testutils"
-	"github.com/secureworks/logger/log/middleware"
-	"github.com/secureworks/logger/log/testlogger"
+	"github.com/secureworks/logger/middleware"
+	"github.com/secureworks/logger/testlogger"
 	"github.com/stretchr/testify/require"
 )
 

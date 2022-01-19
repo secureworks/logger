@@ -13,8 +13,8 @@ import (
 	"github.com/VerticalOps/fakesentry"
 	"github.com/getsentry/sentry-go"
 	"github.com/secureworks/logger/log"
-	"github.com/secureworks/logger/log/middleware"
-	"github.com/secureworks/logger/log/testlogger"
+	"github.com/secureworks/logger/middleware"
+	"github.com/secureworks/logger/testlogger"
 )
 
 // NewConfigWithBuffer generates a default testing config (log.Level is
