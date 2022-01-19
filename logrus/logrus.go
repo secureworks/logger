@@ -22,12 +22,12 @@ import (
 
 // Register logger.
 func init() {
-	log.Register("logrus", New)
+	log.Register("logrus", newLogger)
 }
 
-// New instantiates a new log.Logger with a Logrus driver using the
+// newLogger instantiates a new log.Logger with a Logrus driver using the
 // given configuration and Logrus options.
-func New(conf *log.Config, opts ...log.Option) (log.Logger, error) {
+func newLogger(conf *log.Config, opts ...log.Option) (log.Logger, error) {
 	logrusLogger := logrus.New()
 
 	if conf.Output == nil {

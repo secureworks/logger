@@ -7,29 +7,7 @@ import (
 	"time"
 )
 
-// LoggerFormat is the base type for logging formats supported by this
-// package.
-type LoggerFormat int
-
-const (
-	// ImplementationDefaultFormat leaves the format up to the logger
-	// implementation default.
-	ImplementationDefaultFormat LoggerFormat = iota - 1
-
-	// JSONFormat is the default (zero value) format for loggers
-	// registered with this package.
-	JSONFormat
-)
-
-// IsValid checks if a logger format is valid.
-func (l LoggerFormat) IsValid() bool {
-	switch l {
-	case ImplementationDefaultFormat, JSONFormat:
-		return true
-	default:
-		return false
-	}
-}
+// =====================================================================
 
 // Level is the base type for logging levels supported by this package.
 type Level int
@@ -102,6 +80,34 @@ func AllLevels() []Level {
 	}
 }
 
+// =====================================================================
+
+// LoggerFormat is the base type for logging formats supported by this
+// package.
+type LoggerFormat int
+
+const (
+	// ImplementationDefaultFormat leaves the format up to the logger
+	// implementation default.
+	ImplementationDefaultFormat LoggerFormat = -1
+
+	// JSONFormat is the default (zero value) format for loggers
+	// registered with this package.
+	JSONFormat LoggerFormat = 0
+)
+
+// IsValid checks if a logger format is valid.
+func (l LoggerFormat) IsValid() bool {
+	switch l {
+	case ImplementationDefaultFormat, JSONFormat:
+		return true
+	default:
+		return false
+	}
+}
+
+// =====================================================================
+
 type ctxKey int
 
 const (
@@ -135,12 +141,68 @@ func EntryFromCtx(ctx context.Context) Entry {
 	return e
 }
 
+// =====================================================================
+
+const (
+	// ReqDuration is a key for Logger data concerning HTTP request
+	// logging.
+	ReqDuration = "request_duration"
+
+	// ReqPath is a key for Logger data concerning HTTP request logging.
+	ReqPath = "http_path"
+
+	// ReqMethod is a key for Logger data concerning HTTP request logging.
+	ReqMethod = "http_method"
+
+	// ReqRemoteAddr is a key for Logger data concerning HTTP request
+	// logging.
+	ReqRemoteAddr = "http_remote_addr"
+
+	// PanicStack is a key for Logger data concerning errors and stack
+	// traces.
+	PanicStack = "panic_stack"
+
+	// PanicValue is a key for Logger data concerning errors and stack
+	// traces.
+	PanicValue = "panic_value"
+
+	// CallerField is a key for Logger data concerning errors and stack
+	// traces.
+	CallerField = "caller"
+
+	// StackField is a key for Logger data concerning errors and stack
+	// traces.
+	StackField = "stack"
+)
+
+// =====================================================================
+
+// UnderlyingLogger is an escape hatch allowing Loggers registered with
+// this package the option to return their underlying implementation, as
+// well as reset it. Note this is currently required for CustomOption's
+// to work.
+type UnderlyingLogger interface {
+	GetLogger() interface{}
+	SetLogger(interface{})
+}
+
 // Logger is the minimum interface loggers should implement when used
 // with CTPx packages.
 type Logger interface {
 	// IsLevelEnabled returns true is the level supplied as arg is
 	// enabled.
 	IsLevelEnabled(Level) bool
+
+	// Pipe input to the log: ...
+
+	// WriteCloser returns an io.Writer that when written to writes logs
+	// at the given level. It is the callers responsibility to call Close
+	// when finished. This is particularly useful for redirecting the
+	// output of other loggers or even Readers with the help of
+	// io.TeeReader.
+	WriteCloser(Level) io.WriteCloser
+
+	// Create a new log entry and embed field data: ...
 
 	// WithError inserts the given error into a new Entry and returns the
 	// Entry.
@@ -153,32 +215,33 @@ type Logger interface {
 	// returns the Entry.
 	WithFields(fields map[string]interface{}) Entry
 
+	// Create a new log entry: ...
+
 	// Entry returns a new Entry at the provided log level.
 	Entry(Level) Entry
 
 	// Trace returns a new Entry at TRACE level.
 	Trace() Entry
+
 	// Debug returns a new Entry at DEBUG level.
 	Debug() Entry
+
 	// Info returns a new Entry at INFO level.
 	Info() Entry
+
 	// Warn returns a new Entry at WARN level.
 	Warn() Entry
+
 	// Error returns a new Entry at ERROR level.
 	Error() Entry
+
 	// Panic returns a new Entry at PANIC level. Implementations should
 	// panic once the final message for the Entry is logged.
 	Panic() Entry
+
 	// Fatal returns a new Entry at FATAL level. Implementations should
 	// exit non-zero once the final message for the Entry is logged.
 	Fatal() Entry
-
-	// WriteCloser returns an io.Writer that when written to writes logs
-	// at the given level. It is the callers responsibility to call Close
-	// when finished. This is particularly useful for redirecting the
-	// output of other loggers or even Readers with the help of
-	// io.TeeReader.
-	WriteCloser(Level) io.WriteCloser
 }
 
 // Entry is the primary interface by which individual log entries are
@@ -189,6 +252,23 @@ type Entry interface {
 	// should not log its final message until Send is called.
 	Async() Entry
 
+	// Send sends the log entry (or all asynchronous logged entries). This
+	// interface does not define the behavior of calling this method more
+	// than once.
+	Send()
+
+	// Set log message and send: ...
+
+	// Msgf formats and sets the final log message for this Entry. It will
+	// also send the message if Async has not been set.
+	Msgf(string, ...interface{})
+
+	// Msg sets the final log message for this Entry. It will also send
+	// the message if Async has not been set.
+	Msg(msg string)
+
+	// Embed field data into entry: ...
+
 	// Caller embeds a caller value into the existing Entry. A caller
 	// value is a filepath followed by line number. Skip determines the
 	// number of additional stack frames to ascend when determining the
@@ -198,13 +278,28 @@ type Entry interface {
 	// trace.
 	Caller(skip ...int) Entry
 
+	// WithError ... TODO (multierror not multiple errors...)
 	WithError(errs ...error) Entry
+
+	// WithField ... TODO
 	WithField(key string, val interface{}) Entry
+
+	// WithFields ... TODO
 	WithFields(fields map[string]interface{}) Entry
+
+	// WithBool ... TODO
 	WithBool(key string, bls ...bool) Entry
+
+	// WithDur ... TODO
 	WithDur(key string, durs ...time.Duration) Entry
+
+	// WithInt ... TODO
 	WithInt(key string, is ...int) Entry
+
+	// WithUint ... TODO
 	WithUint(key string, us ...uint) Entry
+
+	// WithStr ... TODO
 	WithStr(key string, strs ...string) Entry
 
 	// WithTime adds the respective time values to the Entry at the given
@@ -212,30 +307,28 @@ type Entry interface {
 	// formatting may be dependant on configuration or logger choice.
 	WithTime(key string, ts ...time.Time) Entry
 
+	// Create a new log entry: ...
+
+	// Trace returns a new Entry at TRACE level.
 	Trace() Entry
+
+	// Debug returns a new Entry at DEBUG level.
 	Debug() Entry
+
+	// Info returns a new Entry at INFO level.
 	Info() Entry
+
+	// Warn returns a new Entry at WARN level.
 	Warn() Entry
+
+	// Error returns a new Entry at ERROR level.
 	Error() Entry
+
+	// Panic returns a new Entry at PANIC level. Implementations should
+	// panic once the final message for the Entry is logged.
 	Panic() Entry
+
+	// Fatal returns a new Entry at FATAL level. Implementations should
+	// exit non-zero once the final message for the Entry is logged.
 	Fatal() Entry
-
-	// Msgf formats and sets the final log message for this Entry. It will
-	// also send the message if Async has not been set.
-	Msgf(string, ...interface{})
-	// Msg sets the final log message for this Entry. It will also send
-	// the message if Async has not been set.
-	Msg(msg string)
-	// Send sends the final log entry. This interface does not define the
-	// behavior of calling this method more than once.
-	Send()
-}
-
-// UnderlyingLogger is an escape hatch allowing Loggers registered with
-// this package the option to return their underlying implementation, as
-// well as reset it. Note this is currently required for CustomOption's
-// to work.
-type UnderlyingLogger interface {
-	GetLogger() interface{}
-	SetLogger(interface{})
 }

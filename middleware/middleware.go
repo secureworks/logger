@@ -14,10 +14,6 @@ import (
 	"github.com/secureworks/logger/log/internal/common"
 )
 
-type noopClose struct{}
-
-func (noopClose) Close() error { return nil }
-
 // NewHTTPServer returns an http.Server with its BaseContext set to
 // logger as its value. If srvLvl is valid then the http.Server's
 // ErrorLog field will also be set, in which case the returned io.Closer
@@ -29,7 +25,7 @@ func NewHTTPServer(logger log.Logger, srvLvl log.Level) (*http.Server, io.Closer
 		BaseContext: func(_ net.Listener) context.Context { return ctx },
 	}
 
-	var ioc io.Closer = noopClose{}
+	var ioc io.Closer = noopCloser{}
 	if srvLvl.IsValid() {
 		wc := logger.WriteCloser(srvLvl)
 		ioc = wc
@@ -40,46 +36,25 @@ func NewHTTPServer(logger log.Logger, srvLvl log.Level) (*http.Server, io.Closer
 	return srv, ioc
 }
 
+// HTTPRequestMiddlewareEntries allows us to inject two different ways
+// to automatically log aspects of a request: headers and synthetics.
+// Headers is a list of header names that will be set as fields in the
+// log if they are present in the request; synthetics are fields
+// generated from some combination or process applied to the request.
+type HTTPRequestMiddlewareEntries struct {
+	Headers    []string
+	Synthetics map[string]func(*http.Request) string
+}
+
 // NewHTTPRequestMiddleware returns net/http compatible middleware for
 // logging requests that pass through it at the provided level. It will
 // also insert an Async log.Entry into the request context such that
 // downstream handlers can use it. It will call entry.Send when done,
 // and capture panics. If lvl is invalid, the default level will be
 // used.
-func NewHTTPRequestMiddleware(logger log.Logger, lvl log.Level) func(http.Handler) http.Handler {
+func NewHTTPRequestMiddleware(logger log.Logger, lvl log.Level, logEngtries *HTTPRequestMiddlewareEntries) func(http.Handler) http.Handler {
 	if !lvl.IsValid() {
-		lvl = log.Level(0)
-	}
-
-	addIfPresent := func(k string, r *http.Request, e log.Entry) {
-		if v := r.Header.Get(k); v != "" {
-			e.WithStr(strings.ToLower(k), v)
-		}
-
-		// Mechanism for checking context.
-	}
-
-	// Retrieves the app name on from the x-request-id header making the
-	// following assumptions:
-	//   - The format for this header's value is: {pod-or-app-name}:{uuid}
-	//   - If pod name is present it is in the following form
-	//     {appName}-{hash}-{hash}
-	//   - If empty is passed, "" is returned, if the value doesn't
-	//     contain ":" "" is returned
-	getSourceApp := func(requestID string) string {
-		reqParts := strings.Split(requestID, ":")
-		if len(reqParts) == 1 {
-			// Not colon delimited, don't want it.
-			return ""
-		}
-		podNameDelim := "-"
-		if !strings.Contains(reqParts[0], podNameDelim) {
-			// Short app name, still want it.
-			return reqParts[0]
-		}
-		parts := strings.Split(reqParts[0], podNameDelim)
-		// Dash delimited app name (might be a pod name, want it).
-		return strings.Join(parts[0:len(parts)-2], podNameDelim)
+		lvl = log.Level(log.INFO)
 	}
 
 	logEntry := func(w http.ResponseWriter, r *http.Request, entry log.Entry, start time.Time) {
@@ -88,18 +63,15 @@ func NewHTTPRequestMiddleware(logger log.Logger, lvl log.Level) func(http.Handle
 		if path == "" {
 			path = r.URL.Path
 		}
-		entry.WithStr("http_path", path)
-		entry.WithStr("http_method", r.Method)
-		entry.WithStr("http_remote_addr", r.RemoteAddr)
-		addIfPresent(log.XRequestID, r, entry)
-		addIfPresent(log.XTraceID, r, entry)
-		addIfPresent(log.XSpanID, r, entry)
-		addIfPresent(log.XTenantCtx, r, entry)
-		addIfPresent(log.XEnvironment, r, entry)
-
-		if requestID := r.Header.Get(log.XRequestID); requestID != "" {
-			if srcApp := getSourceApp(requestID); srcApp != "" {
-				entry.WithStr("src.app", srcApp)
+		entry.WithStr(log.ReqMethod, r.Method)
+		entry.WithStr(log.ReqPath, path)
+		entry.WithStr(log.ReqRemoteAddr, r.RemoteAddr)
+		if logEngtries != nil {
+			for _, header := range logEngtries.Headers {
+				addIfPresent(header, r, entry)
+			}
+			for header, valueFn := range logEngtries.Synthetics {
+				addIfAvailable(header, valueFn(r), entry)
 			}
 		}
 
@@ -135,3 +107,19 @@ func NewHTTPRequestMiddleware(logger log.Logger, lvl log.Level) func(http.Handle
 		})
 	}
 }
+
+func addIfPresent(name string, r *http.Request, e log.Entry) {
+	if value := r.Header.Get(name); value != "" {
+		e.WithStr(strings.ToLower(name), value)
+	}
+}
+
+func addIfAvailable(name string, value string, e log.Entry) {
+	if name != "" && value != "" {
+		e.WithStr(strings.ToLower(name), value)
+	}
+}
+
+type noopCloser struct{}
+
+func (noopCloser) Close() error { return nil }

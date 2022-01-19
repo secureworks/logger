@@ -1,242 +1,155 @@
-package middleware
+package middleware_test
 
 import (
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"reflect"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/secureworks/logger/log"
-	"github.com/secureworks/logger/log/loggers/noop"
+	"github.com/secureworks/logger/log/internal/testutils"
+	"github.com/secureworks/logger/log/middleware"
+	"github.com/secureworks/logger/log/testlogger"
+	"github.com/stretchr/testify/require"
 )
 
-func TestHTTPBaseContext(t *testing.T) {
-	srv := httptest.NewUnstartedServer(nil)
-	noop := noop.New()
+func TestNewHTTPServer(t *testing.T) {
+	require := require.New(t)
 
 	var c io.Closer
-	srv.Config, c = NewHTTPServer(noop, 0)
+	srv := httptest.NewUnstartedServer(nil)
+	logger, _ := testlogger.New(nil)
+	srv.Config, c = middleware.NewHTTPServer(logger, log.INFO)
 	defer c.Close()
 
 	srv.Config.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if log.LoggerFromCtx(r.Context()) == nil {
-			t.Fatal("Nil logger in request scoped context")
-		}
+		entry := log.EntryFromCtx(r.Context())
+		require.NotNil(entry)
 	})
 	srv.Start()
 
 	resp, err := srv.Client().Get(srv.URL)
-	if err != nil {
-		t.Fatalf("Failed to make http request: %v", err)
-	}
+	require.NoError(err)
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("Non-200 status from http.Server: %d", resp.StatusCode)
-	}
-}
-
-type testRequest struct {
-	meta         string
-	data         string
-	msg          string
-	method       string
-	path         string
-	code         int
-	xRequestID   string
-	xTraceID     string
-	xSpanID      string
-	xTenantCtx   string
-	xEnvironment string
+	require.Equal(http.StatusOK, resp.StatusCode)
 }
 
 func TestHTTPRequestMiddleware(t *testing.T) {
-	method := http.MethodGet
-	path := "/foobar"
+	require := require.New(t)
 
-	tr := &testRequest{
-		meta:   "meta",
-		data:   "data",
-		msg:    "hello world",
-		method: method,
-		path:   path,
-		code:   http.StatusCreated,
-	}
+	req := httptest.NewRequest(http.MethodGet, "/test/path", nil)
+	resp, logger := testutils.RunMiddlewareAround(t, req, nil, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		entry := log.EntryFromCtx(r.Context())
+		entry.WithStr("Meta", "data").Msg("message here")
+		w.WriteHeader(http.StatusOK)
+	}))
+	require.Equal(http.StatusOK, resp.Code)
+	require.Len(logger.Entries, 1)
+	entry := logger.Entries[0]
 
-	req := httptest.NewRequest(method, path, nil)
-	expectedEntity := &map[string]interface{}{
-		tr.meta:            tr.data,
-		"http_method":      tr.method,
-		"http_path":        tr.path,
-		"http_remote_addr": req.RemoteAddr,
-	}
-	positiveTest(req, t, tr, *expectedEntity)
+	require.True(entry.IsAsync)
+	require.True(entry.Sent)
+	require.Equal(log.INFO, entry.Level)
+	require.Equal("message here", entry.Message)
+	require.Equal([]string{"data"}, entry.Field("Meta"))
+
+	require.Greater(entry.RequestDuration(), time.Duration(0))
+	require.Equal(req.Method, entry.RequestMethod())
+	require.Equal(req.URL.Path, entry.RequestPath())
+	require.Equal(req.RemoteAddr, entry.RequestRemoteAddr())
 }
 
-func TestHTTPRequestMiddlewareDetails(t *testing.T) {
-	method := http.MethodGet
-	path := "/foobar"
-	requestID := "my-pod-name-1234567-aaaaa:uuid-uuid-uuid"
-	traceID := "trace_it"
-	spanID := "span_it"
-	tenantID := "5000"
+func TestHTTPRequestMiddlewareEntries(t *testing.T) {
+	uID := "uuid-uuid-uuid-uuid"
+	rID := "my-pod-name-1234567-aaaaa:" + uID
+	tID := "trace_it"
+	sID := "span_it"
+	cID := "5000"
 	env := "pilot"
 
-	tr := &testRequest{
-		meta:         "meta",
-		data:         "data",
-		msg:          "hello world",
-		method:       method,
-		path:         path,
-		code:         http.StatusCreated,
-		xRequestID:   requestID,
-		xTraceID:     traceID,
-		xSpanID:      spanID,
-		xTenantCtx:   tenantID,
-		xEnvironment: env,
-	}
+	require := require.New(t)
 
-	req := httptest.NewRequest(method, path, nil)
-	req.RequestURI = ""
-	req.Header.Set(log.XRequestID, requestID)
-	req.Header.Set(log.XTraceID, traceID)
-	req.Header.Set(log.XSpanID, spanID)
-	req.Header.Set(log.XTenantCtx, tenantID)
-	req.Header.Set(log.XEnvironment, env)
+	req := httptest.NewRequest(http.MethodGet, "/test/path", nil)
+	req.Header.Set("X-Request-Id", rID)
+	req.Header.Set("X-Trace-Id", tID)
+	req.Header.Set("X-Span-Id", sID)
+	req.Header.Set("X-Tenant-Ctx", cID)
+	req.Header.Set("X-Environment", env)
 
-	expectedEntity := &map[string]interface{}{
-		tr.meta:            tr.data,
-		"http_method":      tr.method,
-		"http_path":        tr.path,
-		"http_remote_addr": req.RemoteAddr,
-		"x-request-id":     requestID,
-		"x-trace-id":       traceID,
-		"x-span-id":        spanID,
-		"x-tenant-context": tenantID,
-		"x-environment":    env,
-		"src.app":          "my-pod-name",
-	}
-	positiveTest(req, t, tr, *expectedEntity)
-}
+	resp, logger := testutils.RunMiddlewareAround(t, req,
+		&middleware.HTTPRequestMiddlewareEntries{
+			Headers: []string{
+				"X-Request-Id",
+				"X-Trace-Id",
+				"X-Span-Id",
+				"X-Tenant-Ctx",
+				"X-Environment",
+				"X-Other", // Should fail.
+			},
+			Synthetics: map[string]func(*http.Request) string{
+				"req.uuid": func(r *http.Request) (val string) {
+					if reqID := r.Header.Get("X-Request-Id"); strings.Contains(reqID, ":") {
+						val = strings.Split(reqID, ":")[1]
+					}
+					return
+				},
+				// Should fail.
+				"req.other": func(r *http.Request) (val string) {
+					if reqID := r.Header.Get("X-Request-Id"); strings.Contains(reqID, "|") {
+						val = strings.Split(reqID, "|")[1]
+					}
+					return
+				},
+			},
+		},
+		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusOK)
+		}),
+	)
+	require.Equal(http.StatusOK, resp.Code)
+	require.Len(logger.Entries, 1)
+	entry := logger.Entries[0]
 
-func positiveTest(req *http.Request, t *testing.T, testRequest *testRequest, expectedEntity map[string]interface{}) {
-	var entry log.Entry // NOTE(IB): hacky...
+	require.Equal(rID, entry.StringField("x-request-id"))
+	require.Equal(tID, entry.StringField("x-trace-id"))
+	require.Equal(sID, entry.StringField("x-span-id"))
+	require.Equal(cID, entry.StringField("x-tenant-ctx"))
+	require.Equal(env, entry.StringField("x-environment"))
+	require.Equal(uID, entry.StringField("req.uuid"))
 
-	ml := mLog{noop.New()}
-	mid := NewHTTPRequestMiddleware(ml, 0)
-
-	handler := mid(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		entry = log.EntryFromCtx(r.Context())
-		entry.WithStr(testRequest.meta, testRequest.data).Msg(testRequest.msg)
-		w.WriteHeader(testRequest.code)
-	}))
-
-	rec := httptest.NewRecorder()
-	handler.ServeHTTP(rec, req)
-
-	if rec.Code != testRequest.code {
-		t.Fatalf("Wrong code from http handler: %d", testRequest.code)
-	}
-
-	ent := entry.(*mEntry)
-	if !ent.async || !ent.sent || ent.lvl != log.Level(0) || ent.msg != testRequest.msg {
-		t.Fatal("Entry fields incorrect")
-	}
-
-	if _, ok := ent.vals[log.ReqDuration]; !ok {
-		t.Fatal("Request duration does not exist in log entry")
-	}
-
-	delete(ent.vals, log.ReqDuration)
-	deepEqual := reflect.DeepEqual(ent.vals, expectedEntity)
-
-	if !deepEqual {
-		t.Fatalf("Unequal values in log entry: %v", ent.vals)
-	}
+	require.False(entry.HasField("x-other"))
+	require.False(entry.HasField("req.other"))
 }
 
 func TestHTTPRequestMiddlewarePanic(t *testing.T) {
-	ml := mLog{noop.New()}
-	mid := NewHTTPRequestMiddleware(ml, 0)
+	require := require.New(t)
 
-	pv := "this is fine"
-	var entry log.Entry
-	handler := mid(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		entry = log.EntryFromCtx(r.Context())
-		panic(pv)
+	req := httptest.NewRequest(http.MethodGet, "/test/path", nil)
+	res, logger := testutils.RunMiddlewareAround(t, req, nil, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		panic("this is fine")
 	}))
+	require.Equal(http.StatusInternalServerError, res.Code)
+	require.Len(logger.Entries, 1)
+	entry := logger.Entries[0]
 
-	req := httptest.NewRequest(http.MethodGet, "/path", nil)
-	rec := httptest.NewRecorder()
-	handler.ServeHTTP(rec, req)
+	require.True(entry.IsAsync)
+	require.True(entry.Sent)
+	require.Equal(log.ERROR, entry.Level)
 
-	ent := entry.(*mEntry)
+	require.Greater(entry.RequestDuration(), time.Duration(0))
+	require.Equal(req.Method, entry.RequestMethod())
+	require.Equal(req.URL.Path, entry.RequestPath())
+	require.Equal(req.RemoteAddr, entry.RequestRemoteAddr())
 
-	if v, ok := ent.vals[log.PanicValue].(string); !ok || v != pv {
-		t.Fatalf("log.PanicValue not what was expected: %v", v)
-	}
+	pv, ok := entry.Fields[log.PanicValue].(string)
+	require.True(ok)
+	require.Equal("this is fine", pv)
 
-	if st, ok := ent.vals[log.PanicStack].(errors.StackTrace); !ok || len(st) == 0 {
-		t.Fatalf("log.PanicStack not type that was expected: %T", ent.vals[log.PanicStack])
-	}
-
-	if rec.Code != http.StatusInternalServerError {
-		t.Fatalf("Unexpected status code from panic/recover: %d", rec.Code)
-	}
-}
-
-// Some mock types with certain methods shadowed.
-
-type mLog struct {
-	log.Logger
-}
-
-func (l mLog) Entry(lvl log.Level) log.Entry {
-	return &mEntry{
-		Entry: l.Logger.Entry(lvl),
-		lvl:   lvl,
-		vals:  make(map[string]interface{}),
-	}
-}
-
-type mEntry struct {
-	log.Entry
-	async bool
-	sent  bool
-	lvl   log.Level
-	msg   string
-	vals  map[string]interface{}
-}
-
-func (m *mEntry) WithStr(key string, strs ...string) log.Entry {
-	m.vals[key] = strings.Join(strs, "")
-	return m
-}
-
-func (m *mEntry) WithFields(fields map[string]interface{}) log.Entry {
-	for k, v := range fields {
-		m.vals[k] = v
-	}
-
-	return m
-}
-
-func (m *mEntry) Error() log.Entry {
-	return m
-}
-
-func (m *mEntry) Msg(msg string) {
-	m.msg = msg
-}
-
-func (m *mEntry) Async() log.Entry {
-	m.async = true
-	return m
-}
-
-func (m *mEntry) Send() {
-	m.sent = true
+	st, ok := entry.Fields[log.PanicStack].(errors.StackTrace)
+	require.True(ok)
+	require.Greater(len(st), 0)
 }

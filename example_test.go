@@ -35,7 +35,7 @@ func Example() {
 	}
 
 	// Where e is your base handler, echo and buffalo have adapters.
-	handler := middleware.NewHTTPRequestMiddleware(logger, 0)(e)
+	handler := middleware.NewHTTPRequestMiddleware(logger, log.INFO, nil)(e)
 
 	// // Setup logger for use by http.Server or anything that can use an
 	// // io.Writer.

@@ -12,7 +12,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/secureworks/logger/log/internal/testutils"
-	"github.com/secureworks/logger/log/logrus"
 )
 
 const (
@@ -26,7 +25,7 @@ func TestLogrus_New(t *testing.T) {
 		require := require.New(t)
 		config, out := testutils.NewConfigWithBuffer(t, log.INFO)
 
-		logger, err := logrus.New(config)
+		logger, err := log.Open("logrus", config)
 		require.Nil(err)
 
 		logger.Debug().Msg(testMessage)
@@ -40,7 +39,7 @@ func TestLogrus_New(t *testing.T) {
 		require := require.New(t)
 		config, out := testutils.NewConfigWithBuffer(t, log.DEBUG)
 
-		logger, err := logrus.New(config)
+		logger, err := log.Open("logrus", config)
 		require.Nil(err)
 
 		logger.Debug().Msg(testMessage)
@@ -55,7 +54,7 @@ func TestLogrus_New(t *testing.T) {
 		config := log.DefaultConfig(nil)
 		config.Output = nil
 
-		logger, err := logrus.New(config)
+		logger, err := log.Open("logrus", config)
 		require.Nil(err)
 		require.NotNil(logger)
 	})

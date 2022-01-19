@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"testing"
 	"time"
@@ -12,6 +13,8 @@ import (
 	"github.com/VerticalOps/fakesentry"
 	"github.com/getsentry/sentry-go"
 	"github.com/secureworks/logger/log"
+	"github.com/secureworks/logger/log/middleware"
+	"github.com/secureworks/logger/log/testlogger"
 )
 
 // NewConfigWithBuffer generates a default testing config (log.Level is
@@ -108,4 +111,27 @@ Sentry server message received:
 	}
 
 	return sentrySrv, nextMessage
+}
+
+// RunMiddlewareAround wraps a default logging middleware setup around
+// the given handler, executes the given request against it and returns
+// the ResponseRecorder and the test logger involved.
+func RunMiddlewareAround(
+	t *testing.T,
+	req *http.Request,
+	entries *middleware.HTTPRequestMiddlewareEntries,
+	handler http.Handler,
+) (*httptest.ResponseRecorder, *testlogger.Logger) {
+	t.Helper()
+
+	logger, _ := testlogger.New(log.DefaultConfig(nil))
+	resp := httptest.NewRecorder()
+	srv := middleware.NewHTTPRequestMiddleware(
+		logger,
+		log.INFO,
+		entries,
+	)(handler)
+	srv.ServeHTTP(resp, req)
+
+	return resp, logger.(*testlogger.Logger)
 }

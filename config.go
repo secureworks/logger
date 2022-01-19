@@ -8,6 +8,8 @@ import (
 	"strings"
 )
 
+// =====================================================================
+
 // EnvKey is a publicly documented string type for environment lookups
 // performed for DefaultConfig. It is otherwise unspecial.
 type EnvKey string
@@ -36,6 +38,41 @@ const (
 func (ek EnvKey) String() string {
 	return string(ek)
 }
+
+// =====================================================================
+
+var loggerFactories = make(map[string]newLoggerFn, 4) // NOTE(PH): increase as we add logger implementations.
+
+// newLoggerFn is a function type for Logger implemenations to register
+// themselves.
+type newLoggerFn func(*Config, ...Option) (Logger, error)
+
+// Open returns a new instance of the selected Logger with config and
+// options.
+func Open(name string, conf *Config, opts ...Option) (Logger, error) {
+	nl, ok := loggerFactories[name]
+	if !ok {
+		return nil, fmt.Errorf("log: No logger by name (%s)", name)
+	}
+
+	if conf == nil {
+		conf = DefaultConfig(nil)
+	}
+
+	return nl(conf, opts...)
+}
+
+// Register registers the provided newLoggerFn function under the given
+// name for use with Open. Note, this method is not concurreny safe, nil
+// newLoggerFns or duplicate registration will cause a panic.
+func Register(name string, nl func(*Config, ...Option) (Logger, error)) {
+	if _, ok := loggerFactories[name]; ok || nl == nil {
+		panic(fmt.Errorf("log: %s already registered with logging package", name))
+	}
+	loggerFactories[name] = nl
+}
+
+// =====================================================================
 
 // Config defines common logger configuration options.
 type Config struct {
@@ -132,38 +169,4 @@ func DefaultConfig(env func(string) string) *Config {
 
 	conf.Output = os.Stderr
 	return conf
-}
-
-// NewLogger is a function type for Logger implemenations to register
-// themselves.
-type NewLogger func(*Config, ...Option) (Logger, error)
-
-var (
-	setup = make(map[string]NewLogger, 2)
-)
-
-// Register registers the provided NewLogger function under the given
-// name for use with Open. Note, this method is not concurreny safe, nil
-// NewLoggers or duplicate registration will cause a panic.
-func Register(name string, nl NewLogger) {
-	if _, ok := setup[name]; ok || nl == nil {
-		panic(fmt.Errorf("log: %s already registered with logging package", name))
-	}
-
-	setup[name] = nl
-}
-
-// Open returns a new instance of the selected Logger with config and
-// options.
-func Open(name string, conf *Config, opts ...Option) (Logger, error) {
-	nl, ok := setup[name]
-	if !ok {
-		return nil, fmt.Errorf("log: No logger by name (%s)", name)
-	}
-
-	if conf == nil {
-		conf = DefaultConfig(nil)
-	}
-
-	return nl(conf, opts...)
 }
