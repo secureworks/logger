@@ -108,20 +108,20 @@ func NewHTTPRequestMiddleware(logger log.Logger, lvl log.Level, attrs *HTTPReque
 	}
 
 	logEntry := func(w http.ResponseWriter, r *http.Request, entry log.Entry, start time.Time) {
-		if attrs != nil && !attrs.SkipMethod {
+		if attrs == nil || attrs != nil && !attrs.SkipMethod {
 			entry.WithStr(log.ReqMethod, r.Method)
 		}
-		if attrs != nil && !attrs.SkipPath {
+		if attrs == nil || attrs != nil && !attrs.SkipPath {
 			path := r.RequestURI
 			if path == "" {
 				path = r.URL.Path
 			}
 			entry.WithStr(log.ReqPath, path)
 		}
-		if attrs != nil && !attrs.SkipRemoteAddr {
+		if attrs == nil || attrs != nil && !attrs.SkipRemoteAddr {
 			entry.WithStr(log.ReqRemoteAddr, r.RemoteAddr)
 		}
-		if attrs != nil && !attrs.SkipDuration {
+		if attrs == nil || attrs != nil && !attrs.SkipDuration {
 			entry.WithStr(log.ReqDuration, time.Since(start).String())
 		}
 		if attrs != nil {
