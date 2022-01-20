@@ -121,19 +121,19 @@ Sentry server message received:
 func RunMiddlewareAround(
 	t *testing.T,
 	req *http.Request,
-	entries *middleware.HTTPRequestMiddlewareEntries,
+	entries *middleware.HTTPRequestMiddlewareFields,
 	handler http.Handler,
 ) (*httptest.ResponseRecorder, *testlogger.Logger) {
 	t.Helper()
 
 	logger, _ := testlogger.New(log.DefaultConfig(nil))
 	resp := httptest.NewRecorder()
-	srv := middleware.NewHTTPRequestMiddleware(
+	h := middleware.NewHTTPRequestMiddleware(
 		logger,
 		log.INFO,
 		entries,
 	)(handler)
-	srv.ServeHTTP(resp, req)
+	h.ServeHTTP(resp, req)
 
 	return resp, logger.(*testlogger.Logger)
 }

@@ -26,8 +26,8 @@ func TestNewHTTPServer(t *testing.T) {
 	defer c.Close()
 
 	srv.Config.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		entry := log.EntryFromCtx(r.Context())
-		require.NotNil(entry)
+		logger := log.LoggerFromCtx(r.Context())
+		require.NotNil(logger)
 	})
 	srv.Start()
 
@@ -63,7 +63,7 @@ func TestHTTPRequestMiddleware(t *testing.T) {
 	require.Equal(req.RemoteAddr, entry.RequestRemoteAddr())
 }
 
-func TestHTTPRequestMiddlewareEntries(t *testing.T) {
+func TestHTTPRequestMiddlewareFields(t *testing.T) {
 	uID := "uuid-uuid-uuid-uuid"
 	rID := "my-pod-name-1234567-aaaaa:" + uID
 	tID := "trace_it"
@@ -81,7 +81,7 @@ func TestHTTPRequestMiddlewareEntries(t *testing.T) {
 	req.Header.Set("X-Environment", env)
 
 	resp, logger := testutils.RunMiddlewareAround(t, req,
-		&middleware.HTTPRequestMiddlewareEntries{
+		&middleware.HTTPRequestMiddlewareFields{
 			Headers: []string{
 				"X-Request-Id",
 				"X-Trace-Id",

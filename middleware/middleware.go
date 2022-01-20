@@ -3,6 +3,46 @@
 // shared entry per request. It also automates basic request parameter
 // logging.
 //
+// NewHTTPServer binds a logger to an HTTP server so that it will be
+// present in every request context:
+//
+//     // Create a logger.
+//     logger, err := log.Open("zerolog", nil)
+//
+//     // Generate a new HTTP server with the logger.
+//     srv, logCloser = middleware.NewHTTPServer(logger, log.INFO)
+//     defer logCloser.Close()
+//
+//     // Now every request will have access to the logger in the context.
+//     srv.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+//         entry := log.LoggerFromCtx(r.Context())
+//     })
+//     srv.ListenAndServe()
+//
+// NewHTTPRequestMiddleware injects an entry into the context of the the
+// request that it writes after the succeeding handlers process it. This
+// entry has certain aspects of the request logged by default, but can
+// be configured to include more. Subsequent handlers can also extract
+// the entry and update it to allow for canonical log line logging.
+//
+//     // Create a logger.
+//     logger, err := log.Open("zerolog", nil)
+//
+//     // Define request attributes to log.
+//     attrs := middleware.HTTPRequestMiddlewareFields{
+//         Headers: []string{"X-Trace-Id", "X-Request-Id"},
+//         Synthetics: map[string]func(*http.Request) string{
+//             "req.unmod-uri": func(r *http.Request) string { return r.RequestURI },
+//         },
+//     }
+//
+//     // Generate the middleware and then wrap subsequent handlers.
+//     middlewareFn := middleware.NewHTTPRequestMiddleware(logger, log.INFO, attrs)
+//     handler := middlewareFn(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+//         w.WriteHeader(http.StatusOK)
+//     }))
+//     handler.ServeHTTP(resp, req)
+//
 package middleware
 
 import (
@@ -30,23 +70,22 @@ func NewHTTPServer(logger log.Logger, srvLvl log.Level) (*http.Server, io.Closer
 		BaseContext: func(_ net.Listener) context.Context { return ctx },
 	}
 
-	var ioc io.Closer = noopCloser{}
+	var cl io.Closer
 	if srvLvl.IsValid() {
 		wc := logger.WriteCloser(srvLvl)
-		ioc = wc
-
+		cl = io.Closer(wc)
 		srv.ErrorLog = stdlog.New(wc, "[HTTP SERVER] ", stdlog.LstdFlags)
 	}
 
-	return srv, ioc
+	return srv, cl
 }
 
-// HTTPRequestMiddlewareEntries allows us to inject two different ways
+// HTTPRequestMiddlewareFields allows us to inject two different ways
 // to automatically log aspects of a request: headers and synthetics.
 // Headers is a list of header names that will be set as fields in the
 // log if they are present in the request; synthetics are fields
 // generated from some combination or process applied to the request.
-type HTTPRequestMiddlewareEntries struct {
+type HTTPRequestMiddlewareFields struct {
 	Headers    []string
 	Synthetics map[string]func(*http.Request) string
 }
@@ -57,7 +96,7 @@ type HTTPRequestMiddlewareEntries struct {
 // downstream handlers can use it. It will call entry.Send when done,
 // and capture panics. If lvl is invalid, the default level will be
 // used.
-func NewHTTPRequestMiddleware(logger log.Logger, lvl log.Level, logEngtries *HTTPRequestMiddlewareEntries) func(http.Handler) http.Handler {
+func NewHTTPRequestMiddleware(logger log.Logger, lvl log.Level, logEngtries *HTTPRequestMiddlewareFields) func(http.Handler) http.Handler {
 	if !lvl.IsValid() {
 		lvl = log.Level(log.INFO)
 	}
@@ -124,7 +163,3 @@ func addIfAvailable(name string, value string, e log.Entry) {
 		e.WithStr(strings.ToLower(name), value)
 	}
 }
-
-type noopCloser struct{}
-
-func (noopCloser) Close() error { return nil }
