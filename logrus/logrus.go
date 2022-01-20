@@ -143,6 +143,9 @@ func (l *logger) SetLogger(iface interface{}) {
 	if lg, ok := iface.(*logrus.Logger); ok {
 		l.lg = lg
 	}
+	if lg, ok := iface.(logrus.Logger); ok {
+		l.lg = &lg
+	}
 }
 
 // Logger utility functions.

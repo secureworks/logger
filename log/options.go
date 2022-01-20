@@ -6,31 +6,32 @@ import (
 )
 
 // Option is a function type that accepts an interface value and returns
-// an error.
+// an error. Use it to handle applying settings directly to the logger
+// implementation that are not covered by the Config.
+//
+// See the example for the basic steps to implement an Option.
 type Option func(interface{}) error
 
-func noopOption(_ interface{}) error { return nil }
-
-func errOption(err error) Option {
-	return func(_ interface{}) error {
-		return err
-	}
-}
-
-// CustomOption takes the name of a method on the UnderlyingLogger of a
-// Logger implementation as well as a value, and returns an Option. name
-// is the case sensitive name of a method while val should be a single
-// value needed as input to the named method. If several values are
-// needed as input then val should be a function that accepts no input
-// and returns values to be used as input to the named method. If val is
-// a function and returns an error as its only or last value it will be
-// checked and returned if non nil, otherwise remaining values are fed
-// to the named method. A nil val is valid so long as the named method
-// expects nil input or no input. If the named method returns an
-// instance of itself it will be set back as the new UnderlyingLogger.
+// CustomOption is used to pass settings directly to the logger
+// implementation that are not covered by the Config.
+//
+// It takes the case-sensitive name of a method on the logger
+// implementation as well as a value and returns an Option. This will
+// only work in the case that the logger implementation has a method
+// that accepts a single value; if several values are needed as input
+// then val should be a function that accepts no input and returns
+// values to be used as input to the named method. A nil value is valid
+// so long as the named method expects nil input or no input.
+//
+// If the given value is a function and returns an error as its only or
+// last value it will be checked and returned when it is not nil,
+// otherwise remaining values are fed to the named method.
+//
+// If the named method returns an instance of itself it will be set back
+// as the new UnderlyingLogger.
+//
 // If the named method returns an error that error will be checked and
-// returned. Look to the CustomOption tests and package level example
-// for basic usage.
+// returned.
 func CustomOption(name string, val interface{}) Option {
 	if name == "" {
 		return noopOption
@@ -47,13 +48,13 @@ func CustomOption(name string, val interface{}) Option {
 			return fmt.Errorf("log: Logger type (%T) does not support the UnderlyingLogger interface", topLogger)
 		}
 
+		// Handle panics during CustomOption application.
 		defer func() {
 			pv := recover()
 
 			if pv == nil || err != nil {
 				return
 			}
-
 			if e, ok := pv.(error); ok {
 				err = e
 			} else {
@@ -61,25 +62,22 @@ func CustomOption(name string, val interface{}) Option {
 			}
 		}()
 
-		// Get logger and check if nil, if it is this was intentional by
-		// implementation and we should just return.
 		logger := ul.GetLogger()
 		if logger == nil {
 			return
 		}
-
 		logVal := reflect.ValueOf(logger)
 		if !logVal.IsValid() {
 			return
 		}
-
-		methVal := logVal.MethodByName(name)
-		if !methVal.IsValid() {
+		methodVal := logVal.MethodByName(name)
+		if !methodVal.IsValid() {
 			return
 		}
 
 		var wasError bool
 		vals := valFunc()
+
 		// Check if last val is error or error that is nil.
 		if l := len(vals); l > 0 {
 			err, wasError = valueToError(vals[l-1])
@@ -87,7 +85,7 @@ func CustomOption(name string, val interface{}) Option {
 				return
 			}
 
-			// remove value
+			// Remove value.
 			if wasError {
 				vals = vals[:l-1]
 			}
@@ -97,8 +95,7 @@ func CustomOption(name string, val interface{}) Option {
 		// with which to call it. We could check if each input matches what
 		// is expected but instead we'll just call the method and rely on
 		// the defer recover above to stop us from calling something wrong.
-		out := methVal.Call(vals)
-
+		out := methodVal.Call(vals)
 		le := len(out)
 		if le == 0 {
 			return
@@ -112,7 +109,6 @@ func CustomOption(name string, val interface{}) Option {
 			out = out[:le-1]
 			le = len(out)
 		}
-
 		if le == 0 {
 			return
 		}
@@ -136,12 +132,29 @@ func CustomOption(name string, val interface{}) Option {
 				ul.SetLogger(val.Interface())
 				break
 			}
+
+			// With the expectation that logger implementations may type check
+			// and allow a value they can reference when setting it.
+			if val.Type() == logType.Elem() {
+				ul.SetLogger(val.Interface())
+				break
+			}
 		}
 
 		return
 	}
 }
 
+func noopOption(_ interface{}) error { return nil }
+
+func errOption(err error) Option {
+	return func(_ interface{}) error {
+		return err
+	}
+}
+
+// Identify and validate the CustomOption value input, and normalize
+// it into a function that returns a slice of reflect.Values.
 func getReflectVals(val interface{}) (func() []reflect.Value, error) {
 	reflval := reflect.ValueOf(val)
 	if !reflval.IsValid() {
@@ -159,7 +172,6 @@ func getReflectVals(val interface{}) (func() []reflect.Value, error) {
 		if name == "" {
 			name = "anon func"
 		}
-
 		return nil, fmt.Errorf("log: Function value (%s) expects inputs", name)
 	}
 
@@ -168,8 +180,8 @@ func getReflectVals(val interface{}) (func() []reflect.Value, error) {
 
 var errInterface = reflect.TypeOf((*error)(nil)).Elem()
 
-// Checks and converts a reflect.Value to an error if appropriate.
-// nolint
+// Check and convert a reflect.Value to an error if appropriate.
+//nolint
 func valueToError(val reflect.Value) (err error, wasError bool) {
 	if !val.IsValid() {
 		return

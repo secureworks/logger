@@ -4,132 +4,119 @@ import (
 	"errors"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"github.com/stretchr/testify/assert"
 )
 
-func TestCustomOption(t *testing.T) {
-	Convey("CustomOptionRoot", t, func() {
-		testCustomOptionVarients(t)
+func TestOptions_CustomOption(t *testing.T) {
+	t.Run("single value", func(t *testing.T) {
+		w := newTestLogger()
+		const a = "A set"
+
+		err := CustomOption("SetA", a)(w)
+		assert.NoError(t, err)
+		assert.Equal(t, a, w.ul.A)
 	})
-}
 
-func testCustomOptionVarients(t *testing.T) {
-	newW := func() *wrapper {
-		return &wrapper{new(ulLogger)}
-	}
-
-	testDirectValue := func() {
-		w := newW()
+	t.Run("function with single value", func(t *testing.T) {
+		w := newTestLogger()
 		const a = "A set"
 
-		// Value set directly.
-		opt := CustomOption("SetA", a)
-		err := opt(w)
-		So(err, ShouldBeNil)
-		So(w.ul.A, ShouldEqual, a)
-	}
+		err := CustomOption("SetA", func() string { return a })(w)
+		assert.NoError(t, err)
+		assert.Equal(t, a, w.ul.A)
+	})
 
-	testDirectValueFunc := func() {
-		w := newW()
-		const a = "A set"
-
-		// Value set via return from func.
-		opt := CustomOption("SetA", func() string { return a })
-		err := opt(w)
-		So(err, ShouldBeNil)
-		So(w.ul.A, ShouldEqual, a)
-	}
-
-	testChainValue := func() {
-		w := newW()
-		w.ul.A = "old a"
-		orig := w.ul
-
-		// Reset underlying logger.
-		opt := CustomOption("WithA", "new a")
-		err := opt(w)
-		So(err, ShouldBeNil)
-		So(w.ul, ShouldNotPointTo, orig)
-		So(w.ul.A, ShouldNotEqual, "old a")
-	}
-
-	testMultiReturnSuccess := func() {
-		w := newW()
-		w.ul.C = "reflect me"
-		orig := w.ul
-
-		// cAll method that returns several values and the last is a nil
-		// error.
-		opt := CustomOption("ChainClearCNil", nil)
-		err := opt(w)
-		So(err, ShouldBeNil)
-		So(w.ul, ShouldPointTo, orig)
-		So(w.ul.C, ShouldBeEmpty)
-	}
-
-	testChainFailure := func() {
-		w := newW()
-		orig := w.ul
-		b := "B"
-
-		// Call method that returns several values and the last is a non nil
-		// error.
-		opt := CustomOption("ChainBFailure", func() string { return b })
-		err := opt(w)
-		So(err, ShouldEqual, errTheSentinel)
-		So(w.ul, ShouldPointTo, orig)
-		So(w.ul.B, ShouldBeEmpty)
-	}
-
-	testBadFunc := func() {
-		w := newW()
-		b := "B"
-
-		// Pass a func that accepts a value, which we don't support.
-		opt := CustomOption("SetB", func(i int) string { return b })
-		err := opt(w)
-		So(err, ShouldNotBeNil)
-		So(w.ul.B, ShouldNotEqual, b)
-	}
-
-	testPanicRecover := func() {
-		w := newW()
-		orig := w.ul
-
-		// pass func that returns value that is not appropriate for reflected method
-		opt := CustomOption("WithA", func() int { return 42 })
-		err := opt(w)
-		So(err, ShouldNotBeNil)
-		So(w.ul, ShouldPointTo, orig)
-	}
-
-	testMultiInputErrorChain := func() {
-		w := newW()
+	t.Run("function with multiple values including nil error", func(t *testing.T) {
+		w := newTestLogger()
 		orig := w.ul
 		a, b := "A", "B"
 
 		opt := CustomOption("WithAB", func() (string, string, error) { return a, b, nil })
 		err := opt(w)
-		So(err, ShouldBeNil)
-		So(w.ul, ShouldNotPointTo, orig)
-		So(w.ul.A, ShouldEqual, a)
-		So(w.ul.B, ShouldEqual, b)
-		So(orig.A, ShouldBeEmpty)
-		So(orig.B, ShouldBeEmpty)
-	}
+		assert.NoError(t, err)
+		assert.NotSame(t, orig, w.ul)
+		assert.Equal(t, a, w.ul.A)
+		assert.Equal(t, b, w.ul.B)
+		assert.Empty(t, orig.A)
+		assert.Empty(t, orig.B)
+	})
 
-	Convey("DirectValue", testDirectValue)
-	Convey("DirectValueFunc", testDirectValueFunc)
-	Convey("ChainValue", testChainValue)
-	Convey("MultiReturnSuccess", testMultiReturnSuccess)
-	Convey("ChainFailure", testChainFailure)
-	Convey("BadFunc", testBadFunc)
-	Convey("PanicRecover", testPanicRecover)
-	Convey("MultiInputErrorChain", testMultiInputErrorChain)
+	t.Run("malformed function causes error", func(t *testing.T) {
+		w := newTestLogger()
+		b := "B"
+
+		// Pass a func that accepts a value, which we don't support.
+		err := CustomOption("SetB", func(i int) string { return b })(w)
+		assert.Error(t, err)
+		assert.NotEqual(t, b, w.ul.B)
+	})
+
+	t.Run("method returns nil error value", func(t *testing.T) {
+		w := newTestLogger()
+		w.ul.C = "reflect me"
+		orig := w.ul
+
+		err := CustomOption("ChainClearCNil", nil)(w)
+		assert.NoError(t, err)
+		assert.Same(t, orig, w.ul)
+		assert.Empty(t, w.ul.C)
+	})
+
+	t.Run("method returns non-nil error value", func(t *testing.T) {
+		w := newTestLogger()
+		orig := w.ul
+		b := "B"
+
+		err := CustomOption("ChainBFailure", func() string { return b })(w)
+		assert.Equal(t, errTheSentinel, err)
+		assert.Same(t, orig, w.ul)
+		assert.Empty(t, w.ul.B)
+	})
+
+	t.Run("method that is chainable updates logger", func(t *testing.T) {
+		w := newTestLogger()
+		w.ul.A = "old a"
+		orig := w.ul
+
+		err := CustomOption("WithA", "new a")(w)
+		assert.NoError(t, err)
+		assert.NotSame(t, orig, w.ul)
+		assert.Equal(t, "old a", orig.A)
+		assert.Equal(t, "new a", w.ul.A)
+	})
+
+	t.Run("method that is chainable (non-pointer) updates logger", func(t *testing.T) {
+		w := newTestLogger()
+		w.ul.A = "old a"
+		orig := w.ul
+
+		err := CustomOption("WithAVal", "new a")(w)
+		assert.NoError(t, err)
+		assert.NotSame(t, orig, w.ul)
+		assert.Equal(t, "old a", orig.A)
+		assert.Equal(t, "new a", w.ul.A)
+	})
+
+	t.Run("recover from panic", func(t *testing.T) {
+		w := newTestLogger()
+		orig := w.ul
+
+		// Pass func that returns value that is not appropriate for the
+		// reflected method.
+		err := CustomOption("WithA", func() int { return 42 })(w)
+		assert.Error(t, err)
+		assert.Same(t, orig, w.ul)
+	})
 }
+
+// A simple UnderlyingLogger implementation.
 
 type wrapper struct {
 	ul *ulLogger
+}
+
+func newTestLogger() *wrapper {
+	return &wrapper{new(ulLogger)}
 }
 
 func (w *wrapper) GetLogger() interface{} {
@@ -139,6 +126,9 @@ func (w *wrapper) GetLogger() interface{} {
 func (w *wrapper) SetLogger(iface interface{}) {
 	if ul, ok := iface.(*ulLogger); ok {
 		w.ul = ul
+	}
+	if ul, ok := iface.(ulLogger); ok {
+		w.ul = &ul
 	}
 }
 
@@ -167,6 +157,12 @@ func (ul *ulLogger) WithA(a string) *ulLogger {
 	cpy := *ul
 	cpy.SetA(a)
 	return &cpy
+}
+
+func (ul *ulLogger) WithAVal(a string) ulLogger {
+	cpy := *ul
+	cpy.SetA(a)
+	return cpy
 }
 
 func (ul *ulLogger) ChainClearCNil() (*ulLogger, error) {

@@ -12,7 +12,7 @@ import (
 	"github.com/secureworks/logger/internal/testutils"
 	"github.com/secureworks/logger/log"
 	"github.com/secureworks/logger/middleware"
-	"github.com/secureworks/logger/testlogger"
+	_ "github.com/secureworks/logger/testlogger"
 	"github.com/stretchr/testify/require"
 )
 
@@ -21,7 +21,7 @@ func TestNewHTTPServer(t *testing.T) {
 
 	var c io.Closer
 	srv := httptest.NewUnstartedServer(nil)
-	logger, _ := testlogger.New(nil)
+	logger, _ := log.Open("test", nil)
 	srv.Config, c = middleware.NewHTTPServer(logger, log.INFO)
 	defer c.Close()
 

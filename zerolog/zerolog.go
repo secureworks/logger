@@ -136,6 +136,9 @@ func (l *logger) SetLogger(iface interface{}) {
 	if lg, ok := iface.(*zerolog.Logger); ok && !l.notValid() {
 		l.lg = lg
 	}
+	if lg, ok := iface.(zerolog.Logger); ok && !l.notValid() {
+		l.lg = &lg
+	}
 }
 
 // Zerolog-specific methods.
