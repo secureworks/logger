@@ -1,9 +1,10 @@
-package log
+package log_test
 
 import (
 	"errors"
 	"testing"
 
+	"github.com/secureworks/logger/log"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -12,7 +13,7 @@ func TestOptions_CustomOption(t *testing.T) {
 		w := newTestLogger()
 		const a = "A set"
 
-		err := CustomOption("SetA", a)(w)
+		err := log.CustomOption("SetA", a)(w)
 		assert.NoError(t, err)
 		assert.Equal(t, a, w.ul.A)
 	})
@@ -21,7 +22,7 @@ func TestOptions_CustomOption(t *testing.T) {
 		w := newTestLogger()
 		const a = "A set"
 
-		err := CustomOption("SetA", func() string { return a })(w)
+		err := log.CustomOption("SetA", func() string { return a })(w)
 		assert.NoError(t, err)
 		assert.Equal(t, a, w.ul.A)
 	})
@@ -31,7 +32,7 @@ func TestOptions_CustomOption(t *testing.T) {
 		orig := w.ul
 		a, b := "A", "B"
 
-		opt := CustomOption("WithAB", func() (string, string, error) { return a, b, nil })
+		opt := log.CustomOption("WithAB", func() (string, string, error) { return a, b, nil })
 		err := opt(w)
 		assert.NoError(t, err)
 		assert.NotSame(t, orig, w.ul)
@@ -46,7 +47,7 @@ func TestOptions_CustomOption(t *testing.T) {
 		b := "B"
 
 		// Pass a func that accepts a value, which we don't support.
-		err := CustomOption("SetB", func(i int) string { return b })(w)
+		err := log.CustomOption("SetB", func(i int) string { return b })(w)
 		assert.Error(t, err)
 		assert.NotEqual(t, b, w.ul.B)
 	})
@@ -56,7 +57,7 @@ func TestOptions_CustomOption(t *testing.T) {
 		w.ul.C = "reflect me"
 		orig := w.ul
 
-		err := CustomOption("ChainClearCNil", nil)(w)
+		err := log.CustomOption("ChainClearCNil", nil)(w)
 		assert.NoError(t, err)
 		assert.Same(t, orig, w.ul)
 		assert.Empty(t, w.ul.C)
@@ -67,7 +68,7 @@ func TestOptions_CustomOption(t *testing.T) {
 		orig := w.ul
 		b := "B"
 
-		err := CustomOption("ChainBFailure", func() string { return b })(w)
+		err := log.CustomOption("ChainBFailure", func() string { return b })(w)
 		assert.Equal(t, errTheSentinel, err)
 		assert.Same(t, orig, w.ul)
 		assert.Empty(t, w.ul.B)
@@ -78,7 +79,7 @@ func TestOptions_CustomOption(t *testing.T) {
 		w.ul.A = "old a"
 		orig := w.ul
 
-		err := CustomOption("WithA", "new a")(w)
+		err := log.CustomOption("WithA", "new a")(w)
 		assert.NoError(t, err)
 		assert.NotSame(t, orig, w.ul)
 		assert.Equal(t, "old a", orig.A)
@@ -90,7 +91,7 @@ func TestOptions_CustomOption(t *testing.T) {
 		w.ul.A = "old a"
 		orig := w.ul
 
-		err := CustomOption("WithAVal", "new a")(w)
+		err := log.CustomOption("WithAVal", "new a")(w)
 		assert.NoError(t, err)
 		assert.NotSame(t, orig, w.ul)
 		assert.Equal(t, "old a", orig.A)
@@ -103,7 +104,7 @@ func TestOptions_CustomOption(t *testing.T) {
 
 		// Pass func that returns value that is not appropriate for the
 		// reflected method.
-		err := CustomOption("WithA", func() int { return 42 })(w)
+		err := log.CustomOption("WithA", func() int { return 42 })(w)
 		assert.Error(t, err)
 		assert.Same(t, orig, w.ul)
 	})

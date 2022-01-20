@@ -213,12 +213,11 @@ type Logger interface {
 type Entry interface {
 	// Async flips the current Entry to be asynchronous, or back if called
 	// more than once. If set to asynchronous an Entry implementation
-	// should not log its final message until Send is called.
+	// should not write to output until Send is called.
 	Async() Entry
 
-	// Send sends the log entry (or all asynchronous logged entries). This
-	// interface does not define the behavior of calling this method more
-	// than once.
+	// Send sends (writes) the current entry. This interface does not
+	// define the behavior of calling this method more than once.
 	Send()
 
 	// Msgf formats and sets the final log message for this Entry. It will

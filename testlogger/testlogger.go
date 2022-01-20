@@ -36,12 +36,18 @@ func New(config *log.Config, opts ...log.Option) (log.Logger, error) {
 		// Env no-op ensures we don't have settings based on env.
 		config = log.DefaultConfig(func(string) string { return "" })
 	}
+
 	logger := &Logger{
 		Config:            config,
 		WriteCloserBuffer: &bytes.Buffer{}, // For WriteCloser.
 		Entries:           []*Entry{},
 	}
-	logger.Config.Output = &bytes.Buffer{} // For output.
+
+	// Change default output, as long as os.Stdout (for examples) is not set.
+	if logger.Config.Output != os.Stdout {
+		logger.Config.Output = &bytes.Buffer{}
+	}
+
 	for _, opt := range opts {
 		if err := opt(logger); err != nil {
 			return nil, err

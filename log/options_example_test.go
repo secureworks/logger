@@ -14,6 +14,9 @@ import (
 )
 
 func ExampleOption() {
+	// Options can be used to specificy behavior for the logger
+	// implementation beyond the values in the Config. For more examples
+	// see CustomOption.
 	optionFn := func(val interface{}) error {
 		ul, _ := val.(log.UnderlyingLogger)
 		logger, _ := ul.GetLogger().(*logrus.Logger)
@@ -38,7 +41,10 @@ func (h SingleHook) Run(e *zerolog.Event, level zerolog.Level, msg string) {
 	e.Bool("test_hook", true)
 }
 
-func ExampleCustomOption_with_single_value() {
+func ExampleCustomOption_singleValue() {
+	// CustomOption can be used to specificy behavior for the logger
+	// implementation beyond the values in the Config. For more examples
+	// see Option.
 	logger, _ := log.Open(
 		"zerolog",
 		&log.Config{Output: os.Stdout},
@@ -56,7 +62,7 @@ func ExampleCustomOption_with_single_value() {
 	// Output: {"level":"info","test_hook":true,"message":"test message here"}
 }
 
-func ExampleCustomOption_with_possible_error() {
+func ExampleCustomOption_withPossibleError() {
 	// If a CustomOption returns an error value that is not nil, that
 	// error bubbles up through log.Open.
 	loggerFailed, err := log.Open(

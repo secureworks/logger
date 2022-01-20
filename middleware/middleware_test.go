@@ -55,7 +55,7 @@ func TestHTTPRequestMiddleware(t *testing.T) {
 	require.True(entry.Sent)
 	require.Equal(log.INFO, entry.Level)
 	require.Equal("message here", entry.Message)
-	require.Equal([]string{"data"}, entry.Field("Meta"))
+	require.Equal("data", entry.StringField("Meta"))
 
 	require.Greater(entry.RequestDuration(), time.Duration(0))
 	require.Equal(req.Method, entry.RequestMethod())
