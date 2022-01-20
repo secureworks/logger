@@ -17,7 +17,7 @@ var defaultConfig = &log.Config{
 	LocalDevel:     false,
 	Format:         log.JSONFormat,
 	EnableErrStack: false,
-	Output:         os.Stderr,
+	Output:         os.Stderr, // Can't set.
 	Sentry: log.SentryConfig{
 		DSN:     "",
 		Release: "",
@@ -110,10 +110,18 @@ func TestOpenRegister(t *testing.T) {
 	t.Run("Open with config sets config", func(t *testing.T) {
 		logger, err := log.Open("test", nil)
 		require.NoError(t, err)
-		require.Equal(t, defaultConfig, logger.(*testlogger.Logger).Config)
+
+		// Test logger uses a bytes.Buffer for Output by default instead of
+		// os.Stderr, so let's just reset that.
+		config := logger.(*testlogger.Logger).Config
+		config.Output = os.Stderr
+		require.Equal(t, defaultConfig, config)
 
 		logger, err = log.Open("test", loadedConfig)
 		require.NoError(t, err)
-		require.Equal(t, loadedConfig, logger.(*testlogger.Logger).Config)
+
+		config = logger.(*testlogger.Logger).Config
+		config.Output = os.Stderr
+		require.Equal(t, loadedConfig, config)
 	})
 }
