@@ -18,7 +18,14 @@ var defaultConfig = &log.Config{
 	Format:         log.JSONFormat,
 	EnableErrStack: false,
 	Output:         os.Stderr, // Can't set.
-	Sentry: log.SentryConfig{
+	Sentry: struct {
+		DSN     string
+		Release string
+		Env     string
+		Server  string
+		Levels  []log.Level
+		Debug   bool
+	}{
 		DSN:     "",
 		Release: "",
 		Env:     "",
@@ -34,7 +41,14 @@ var loadedConfig = &log.Config{
 	Format:         log.ImplementationDefaultFormat,
 	EnableErrStack: true,
 	Output:         os.Stderr, // Can't set.
-	Sentry: log.SentryConfig{
+	Sentry: struct {
+		DSN     string
+		Release string
+		Env     string
+		Server  string
+		Levels  []log.Level
+		Debug   bool
+	}{
 		DSN:     "https://example.com/test",
 		Release: "app-1-a",
 		Env:     "prod",

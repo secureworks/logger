@@ -26,10 +26,10 @@ const (
 	// (ImplementationDefaultFormat).
 	Format EnvKey = "LOG_FORMAT"
 
-	// ErrStack is the env var representing whether we shall enables error
+	// EnableErrStack is the env var representing whether we shall enables error
 	// stack gathering and logging. Relevant values include: "true",
 	// "True", "TRUE".
-	ErrStack EnvKey = "ERROR_STACK"
+	EnableErrStack EnvKey = "ERROR_STACK"
 
 	// SentryDSN is the env var representing the Sentry project DNS. An
 	// empty value disables Sentry.
@@ -88,59 +88,54 @@ type Config struct {
 	// Sentry is a sub-config type for configurating Sentry if desired. No
 	// other portion of this struct is considered if DSN is not set and
 	// valid.
-	Sentry SentryConfig
-}
+	Sentry struct {
+		// DSN is the Sentry DSN.
+		DSN string
 
-// Sentry is a sub-config type for configurating Sentry if desired. No
-// other portion of this struct is considered if DSN is not set and
-// valid.
-type SentryConfig struct {
-	// DSN is the Sentry DSN.
-	DSN string
+		// Release is the program release or revision.
+		Release string
 
-	// Release is the program release or revision.
-	Release string
+		// Env is the deployment environment; "prod", "dev", etc.
+		Env string
 
-	// Env is the deployment environment; "prod", "dev", etc.
-	Env string
+		// Server is the server or hostname.
+		Server string
 
-	// Server is the server or hostname.
-	Server string
+		// Levels are the log levels that will trigger an event to be sent
+		// to Sentry.
+		Levels []Level
 
-	// Levels are the log levels that will trigger an event to be sent
-	// to Sentry.
-	Levels []Level
-
-	// Debug is a passthrough for Sentry debugging.
-	Debug bool
+		// Debug is a passthrough for Sentry debugging.
+		Debug bool
+	}
 }
 
 // DefaultConfig returns a Config instance with sane defaults. env is a
 // callback for looking up EnvKeys, it is set to os.Getenv if nil.
 // Fields and values returned by this function can be altered.
 func DefaultConfig(env func(string) string) *Config {
-	conf := new(Config)
+	config := new(Config)
 	if env == nil {
 		env = os.Getenv
 	}
 
 	// Level defaults to 0, ie INFO.
 	if lvlStr := env(LogLevel.String()); lvlStr != "" {
-		conf.Level = LevelFromString(lvlStr)
+		config.Level = LevelFromString(lvlStr)
 	}
-	if errStackStr := env(ErrStack.String()); errStackStr != "" {
-		conf.EnableErrStack = strings.ToUpper(errStackStr) == "TRUE"
+	if errStackStr := env(EnableErrStack.String()); errStackStr != "" {
+		config.EnableErrStack = strings.ToUpper(errStackStr) == "TRUE"
 	}
 	if localDevel := env(LocalDevel.String()); localDevel != "" {
-		conf.LocalDevel = strings.ToUpper(localDevel) == "TRUE"
+		config.LocalDevel = strings.ToUpper(localDevel) == "TRUE"
 	}
 	if format := env(Format.String()); format != "" {
 		f, err := strconv.ParseInt(format, 10, 64)
 		if err == nil { // FIXME(PH): swallows errors...
-			conf.Format = LoggerFormat(f)
+			config.Format = LoggerFormat(f)
 		}
 	}
-	conf.Output = os.Stderr // May not be set via environment.
+	config.Output = os.Stderr // May not be set via environment.
 
 	// SentryDSN must be set to use Sentry, so we only configure other
 	// Sentry settings if it exists.
@@ -166,20 +161,20 @@ func DefaultConfig(env func(string) string) *Config {
 			host = server
 		}
 
-		conf.Sentry.DSN = sentryDSN
-		conf.Sentry.Levels = lvls
-		conf.Sentry.Release = env(Release.String())
-		conf.Sentry.Server = host
-		conf.Sentry.Env = env(Environment.String())
+		config.Sentry.DSN = sentryDSN
+		config.Sentry.Levels = lvls
+		config.Sentry.Release = env(Release.String())
+		config.Sentry.Server = host
+		config.Sentry.Env = env(Environment.String())
 		if debug := env(SentryDebug.String()); debug != "" {
-			conf.Sentry.Debug = strings.ToUpper(debug) == "TRUE"
+			config.Sentry.Debug = strings.ToUpper(debug) == "TRUE"
 		}
 	}
 	if _, err := url.Parse(sentryDSN); err != nil {
-		conf.Sentry.DSN = ""
+		config.Sentry.DSN = ""
 	}
 
-	return conf
+	return config
 }
 
 // NOTE(PH): increase as we add logger implementations.
