@@ -34,29 +34,29 @@ func init() {
 
 // newLogger instantiates a new log.Logger with a Zerolog driver using
 // the given configuration and Zerolog options.
-func newLogger(conf *log.Config, opts ...log.Option) (log.Logger, error) {
-	zlvl := lvlToZerolog(conf.Level)
+func newLogger(config *log.Config, opts ...log.Option) (log.Logger, error) {
+	zlvl := lvlToZerolog(config.Level)
 	logger := &logger{
-		errStack: conf.EnableErrStack,
+		errStack: config.EnableErrStack,
 		lvl:      zlvl,
 	}
 
-	output := conf.Output
+	output := config.Output
 	if output == nil {
 		output = os.Stderr
 	}
 
 	// Set up Sentry writer.
-	if conf.Sentry.DSN != "" {
+	if config.Sentry.DSN != "" {
 		tp := sentry.NewHTTPSyncTransport()
 		tp.Timeout = time.Second * 15
 		opts := sentry.ClientOptions{
-			Dsn:              conf.Sentry.DSN,
-			Release:          conf.Sentry.Release,
-			Environment:      conf.Sentry.Env,
-			ServerName:       conf.Sentry.Server,
-			Debug:            conf.Sentry.Debug,
-			AttachStacktrace: conf.EnableErrStack,
+			Dsn:              config.Sentry.DSN,
+			Release:          config.Sentry.Release,
+			Environment:      config.Sentry.Env,
+			ServerName:       config.Sentry.Server,
+			Debug:            config.Sentry.Debug,
+			AttachStacktrace: config.EnableErrStack,
 			Transport:        tp,
 		}
 		if err := common.InitSentry(opts); err != nil {
@@ -64,7 +64,7 @@ func newLogger(conf *log.Config, opts ...log.Option) (log.Logger, error) {
 		}
 		output = io.MultiWriter(
 			output,
-			newSentryWriter(conf.Sentry.Levels...),
+			newSentryWriter(config.Sentry.Levels...),
 		)
 	}
 

@@ -27,39 +27,39 @@ func init() {
 
 // newLogger instantiates a new log.Logger with a Logrus driver using
 // the given configuration and Logrus options.
-func newLogger(conf *log.Config, opts ...log.Option) (log.Logger, error) {
+func newLogger(config *log.Config, opts ...log.Option) (log.Logger, error) {
 	logrusLogger := logrus.New()
 
-	if conf.Output == nil {
-		conf.Output = os.Stderr
+	if config.Output == nil {
+		config.Output = os.Stderr
 	}
-	logrusLogger.SetOutput(conf.Output)
-	logrusLogger.SetLevel(lvlToLogrus(conf.Level))
+	logrusLogger.SetOutput(config.Output)
+	logrusLogger.SetLevel(lvlToLogrus(config.Level))
 	logrusLogger.SetNoLock()
 
-	if conf.Format == log.JSONFormat {
+	if config.Format == log.JSONFormat {
 		jsonF := &logrus.JSONFormatter{
-			PrettyPrint: conf.LocalDevel,
+			PrettyPrint: config.LocalDevel,
 		}
 		logrusLogger.SetFormatter(jsonF)
 	}
 
-	if conf.EnableErrStack {
+	if config.EnableErrStack {
 		logrusLogger.AddHook(errorHook{})
 	}
 
 	// Set up Sentry hook.
-	if conf.Sentry.DSN != "" {
+	if config.Sentry.DSN != "" {
 		tp := sentry.NewHTTPSyncTransport()
 		tp.Timeout = time.Second * 15
 
 		opts := sentry.ClientOptions{
-			Dsn:              conf.Sentry.DSN,
-			Release:          conf.Sentry.Release,
-			Environment:      conf.Sentry.Env,
-			ServerName:       conf.Sentry.Server,
-			Debug:            conf.Sentry.Debug,
-			AttachStacktrace: conf.EnableErrStack,
+			Dsn:              config.Sentry.DSN,
+			Release:          config.Sentry.Release,
+			Environment:      config.Sentry.Env,
+			ServerName:       config.Sentry.Server,
+			Debug:            config.Sentry.Debug,
+			AttachStacktrace: config.EnableErrStack,
 			Transport:        tp,
 		}
 
@@ -67,8 +67,8 @@ func newLogger(conf *log.Config, opts ...log.Option) (log.Logger, error) {
 			return nil, err
 		}
 
-		lrusLvls := make([]logrus.Level, 0, len(conf.Sentry.Levels))
-		for _, lvl := range conf.Sentry.Levels {
+		lrusLvls := make([]logrus.Level, 0, len(config.Sentry.Levels))
+		for _, lvl := range config.Sentry.Levels {
 			lrusLvls = append(lrusLvls, lvlToLogrus(lvl))
 		}
 
@@ -77,7 +77,7 @@ func newLogger(conf *log.Config, opts ...log.Option) (log.Logger, error) {
 	}
 
 	// Init logger with Logrus and error stack flag and apply options.
-	logger := &logger{lg: logrusLogger, errStack: conf.EnableErrStack}
+	logger := &logger{lg: logrusLogger, errStack: config.EnableErrStack}
 
 	// Apply options.
 	for _, opt := range opts {

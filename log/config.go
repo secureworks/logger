@@ -186,17 +186,17 @@ type newLoggerFn func(*Config, ...Option) (Logger, error)
 
 // Open returns a new instance of the selected Logger with config and
 // options.
-func Open(name string, conf *Config, opts ...Option) (Logger, error) {
+func Open(name string, config *Config, opts ...Option) (Logger, error) {
 	nl, ok := loggerFactories[name]
 	if !ok {
 		return nil, fmt.Errorf("log: No logger by name (%s)", name)
 	}
 
-	if conf == nil {
-		conf = DefaultConfig(nil)
+	if config == nil {
+		config = DefaultConfig(nil)
 	}
 
-	return nl(conf, opts...)
+	return nl(config, opts...)
 }
 
 // Register registers the provided newLoggerFn function under the given
