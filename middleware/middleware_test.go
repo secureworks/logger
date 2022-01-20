@@ -63,7 +63,7 @@ func TestHTTPRequestMiddleware(t *testing.T) {
 	require.Equal(req.RemoteAddr, entry.RequestRemoteAddr())
 }
 
-func TestHTTPRequestMiddlewareFields(t *testing.T) {
+func TestHTTPRequestLogAttributes(t *testing.T) {
 	uID := "uuid-uuid-uuid-uuid"
 	rID := "my-pod-name-1234567-aaaaa:" + uID
 	tID := "trace_it"
@@ -81,7 +81,7 @@ func TestHTTPRequestMiddlewareFields(t *testing.T) {
 	req.Header.Set("X-Environment", env)
 
 	resp, logger := testutils.RunMiddlewareAround(t, req,
-		&middleware.HTTPRequestMiddlewareFields{
+		&middleware.HTTPRequestLogAttributes{
 			Headers: []string{
 				"X-Request-Id",
 				"X-Trace-Id",

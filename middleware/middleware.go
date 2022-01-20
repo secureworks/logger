@@ -29,7 +29,7 @@
 //     logger, err := log.Open("zerolog", nil)
 //
 //     // Define request attributes to log.
-//     attrs := middleware.HTTPRequestMiddlewareFields{
+//     attrs := middleware.HTTPRequestLogAttributes{
 //         Headers: []string{"X-Trace-Id", "X-Request-Id"},
 //         Synthetics: map[string]func(*http.Request) string{
 //             "req.unmod-uri": func(r *http.Request) string { return r.RequestURI },
@@ -80,14 +80,20 @@ func NewHTTPServer(logger log.Logger, srvLvl log.Level) (*http.Server, io.Closer
 	return srv, cl
 }
 
-// HTTPRequestMiddlewareFields allows us to inject two different ways
+// HTTPRequestLogAttributes allows us to inject two different ways
 // to automatically log aspects of a request: headers and synthetics.
 // Headers is a list of header names that will be set as fields in the
 // log if they are present in the request; synthetics are fields
 // generated from some combination or process applied to the request.
-type HTTPRequestMiddlewareFields struct {
-	Headers    []string
-	Synthetics map[string]func(*http.Request) string
+//
+// If desired, the default attributes may also be skipped.
+type HTTPRequestLogAttributes struct {
+	Headers        []string
+	Synthetics     map[string]func(*http.Request) string
+	SkipDuration   bool
+	SkipMethod     bool
+	SkipPath       bool
+	SkipRemoteAddr bool
 }
 
 // NewHTTPRequestMiddleware returns net/http compatible middleware for
@@ -96,25 +102,33 @@ type HTTPRequestMiddlewareFields struct {
 // downstream handlers can use it. It will call entry.Send when done,
 // and capture panics. If lvl is invalid, the default level will be
 // used.
-func NewHTTPRequestMiddleware(logger log.Logger, lvl log.Level, logEngtries *HTTPRequestMiddlewareFields) func(http.Handler) http.Handler {
+func NewHTTPRequestMiddleware(logger log.Logger, lvl log.Level, attrs *HTTPRequestLogAttributes) func(http.Handler) http.Handler {
 	if !lvl.IsValid() {
 		lvl = log.Level(log.INFO)
 	}
 
 	logEntry := func(w http.ResponseWriter, r *http.Request, entry log.Entry, start time.Time) {
-		entry.WithStr(log.ReqDuration, time.Since(start).String())
-		path := r.RequestURI
-		if path == "" {
-			path = r.URL.Path
+		if attrs != nil && !attrs.SkipMethod {
+			entry.WithStr(log.ReqMethod, r.Method)
 		}
-		entry.WithStr(log.ReqMethod, r.Method)
-		entry.WithStr(log.ReqPath, path)
-		entry.WithStr(log.ReqRemoteAddr, r.RemoteAddr)
-		if logEngtries != nil {
-			for _, header := range logEngtries.Headers {
+		if attrs != nil && !attrs.SkipPath {
+			path := r.RequestURI
+			if path == "" {
+				path = r.URL.Path
+			}
+			entry.WithStr(log.ReqPath, path)
+		}
+		if attrs != nil && !attrs.SkipRemoteAddr {
+			entry.WithStr(log.ReqRemoteAddr, r.RemoteAddr)
+		}
+		if attrs != nil && !attrs.SkipDuration {
+			entry.WithStr(log.ReqDuration, time.Since(start).String())
+		}
+		if attrs != nil {
+			for _, header := range attrs.Headers {
 				addIfPresent(header, r, entry)
 			}
-			for header, valueFn := range logEngtries.Synthetics {
+			for header, valueFn := range attrs.Synthetics {
 				addIfAvailable(header, valueFn(r), entry)
 			}
 		}
