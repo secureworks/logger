@@ -28,10 +28,6 @@ Run any Go command and the toolchain will resolve and fetch the `logger` module 
 
 [Documentation is available on pkg.go.dev][godocs]. You should also look at the examples in the main package.
 
-## Contributing
-
-See [CONTRIBUTING](.github/CONTRIBUTING.md) for guidelines.
-
 ## License
 
 This library is distributed under the [Apache-2.0 license][apache-2] found in the [LICENSE](./LICENSE) file.
