@@ -9,8 +9,10 @@ package testlogger
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
+	"os"
 	"strings"
 	"time"
 
@@ -133,7 +135,7 @@ func (Logger) Close() error                   { return nil }
 type Entry struct {
 	// Logger is a reference to the testlogger.Logger that generated the
 	// entry.
-	Logger log.Logger
+	Logger *Logger
 
 	// Level is the current level of the entry.
 	Level log.Level
@@ -168,14 +170,91 @@ func (e *Entry) WithFields(fields map[string]interface{}) log.Entry {
 	return e
 }
 
-func (e *Entry) Caller(vals ...int) log.Entry                      { return e.WithField(log.CallerField, vals) }
-func (e *Entry) WithError(errs ...error) log.Entry                 { return e.WithField(log.StackField, errs) }
-func (e *Entry) WithBool(k string, vals ...bool) log.Entry         { return e.WithField(k, vals) }
-func (e *Entry) WithDur(k string, vals ...time.Duration) log.Entry { return e.WithField(k, vals) }
-func (e *Entry) WithInt(k string, vals ...int) log.Entry           { return e.WithField(k, vals) }
-func (e *Entry) WithUint(k string, vals ...uint) log.Entry         { return e.WithField(k, vals) }
-func (e *Entry) WithStr(k string, vals ...string) log.Entry        { return e.WithField(k, vals) }
-func (e *Entry) WithTime(k string, vals ...time.Time) log.Entry    { return e.WithField(k, vals) }
+// func shrink(val interface{}) interface{} {
+// 	reflect.TypeOf(val).Kind() == reflect.Slice{}
+// 	// li := len(is)
+// 	// if e.notValid() || li == 0 {
+// 	// 	return e
+// 	// }
+
+// 	// if li == 1 {
+
+// 	return val
+// }
+
+func (e *Entry) Caller(vals ...int) log.Entry {
+	return e.WithField(log.CallerField, vals)
+}
+
+func (e *Entry) WithError(errs ...error) log.Entry {
+	if len(errs) == 0 {
+		return e
+	}
+	if len(errs) == 1 {
+		return e.WithField("error", errs[0].Error())
+	}
+	return e.WithField("error", errs)
+}
+
+func (e *Entry) WithBool(k string, vals ...bool) log.Entry {
+	if len(vals) == 0 {
+		return e
+	}
+	if len(vals) == 1 {
+		return e.WithField(k, vals[0])
+	}
+	return e.WithField(k, vals)
+}
+
+func (e *Entry) WithDur(k string, vals ...time.Duration) log.Entry {
+	if len(vals) == 0 {
+		return e
+	}
+	if len(vals) == 1 {
+		return e.WithField(k, vals[0])
+	}
+	return e.WithField(k, vals)
+}
+
+func (e *Entry) WithInt(k string, vals ...int) log.Entry {
+	if len(vals) == 0 {
+		return e
+	}
+	if len(vals) == 1 {
+		return e.WithField(k, vals[0])
+	}
+	return e.WithField(k, vals)
+}
+
+func (e *Entry) WithUint(k string, vals ...uint) log.Entry {
+	if len(vals) == 0 {
+		return e
+	}
+	if len(vals) == 1 {
+		return e.WithField(k, vals[0])
+	}
+	return e.WithField(k, vals)
+}
+
+func (e *Entry) WithStr(k string, vals ...string) log.Entry {
+	if len(vals) == 0 {
+		return e
+	}
+	if len(vals) == 1 {
+		return e.WithField(k, vals[0])
+	}
+	return e.WithField(k, vals)
+}
+
+func (e *Entry) WithTime(k string, vals ...time.Time) log.Entry {
+	if len(vals) == 0 {
+		return e
+	}
+	if len(vals) == 1 {
+		return e.WithField(k, vals[0])
+	}
+	return e.WithField(k, vals)
+}
 
 func (e *Entry) Trace() log.Entry { e.Level = log.TRACE; return e }
 func (e *Entry) Debug() log.Entry { e.Level = log.DEBUG; return e }
@@ -188,12 +267,28 @@ func (e *Entry) Fatal() log.Entry { e.Level = log.FATAL; return e }
 func (e *Entry) Msg(msg string) {
 	e.Message = msg
 	if !e.IsAsync {
-		e.Sent = true
+		e.Send()
 	}
 }
 
-func (e *Entry) Msgf(format string, vals ...interface{}) { e.Msg(fmt.Sprintf(format, vals...)) }
-func (e *Entry) Send()                                   { e.Sent = true }
+func (e *Entry) Msgf(format string, vals ...interface{}) {
+	e.Msg(fmt.Sprintf(format, vals...))
+}
+
+// Writes a JSON version of the fields with any message and the level.
+func (e *Entry) Send() {
+	fields := e.Fields
+	fields["level"] = StringFromLevel(e.Level)
+	if e.Message != "" {
+		fields["message"] = e.Message
+	}
+
+	byt, err := json.Marshal(fields)
+	if err == nil {
+		e.Logger.Config.Output.Write(byt)
+		e.Sent = true
+	}
+}
 
 // Test utilities.
 
@@ -214,6 +309,9 @@ func (e *Entry) Field(name string) interface{} {
 func (e *Entry) StringField(name string) string {
 	val, ok := e.Field(name).([]string)
 	if !ok {
+		if val, ok := e.Field(name).(string); ok {
+			return val
+		}
 		return ""
 	}
 	return strings.Join(val, ";")
@@ -221,16 +319,13 @@ func (e *Entry) StringField(name string) string {
 
 // RequestDuration returns the stored request duration field, if any
 // exists. Any value less than zero indicates a missing or malformed
-// field.
+// field. Assumes that only one duration was set.
 func (e *Entry) RequestDuration() time.Duration {
-	val, ok := e.Field(log.ReqDuration).([]string)
+	val, ok := e.Field(log.ReqDuration).(string)
 	if !ok {
-		return -3
-	}
-	if len(val) != 1 {
 		return -2
 	}
-	dur, err := time.ParseDuration(val[0])
+	dur, err := time.ParseDuration(val)
 	if err != nil {
 		return -1
 	}
@@ -251,4 +346,25 @@ func (e *Entry) RequestPath() string {
 // any exists.
 func (e *Entry) RequestRemoteAddr() string {
 	return e.StringField(log.ReqRemoteAddr)
+}
+
+// StringFromLevel is a convenience for printing out log.Levels.
+func StringFromLevel(lvl log.Level) string {
+	switch lvl {
+	case log.TRACE:
+		return "TRACE"
+	case log.DEBUG:
+		return "DEBUG"
+	case log.INFO:
+		return "INFO"
+	case log.WARN:
+		return "WARN"
+	case log.ERROR:
+		return "ERROR"
+	case log.PANIC:
+		return "PANIC"
+	case log.FATAL:
+		return "FATAL"
+	}
+	return "UNKN"
 }
