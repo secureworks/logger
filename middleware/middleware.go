@@ -1,3 +1,8 @@
+// Package middleware has HTTP server middleware that provides access to
+// a shared logger and simplifies writing canonical log lines with a
+// shared entry per request. It also automates basic request parameter
+// logging.
+//
 package middleware
 
 import (

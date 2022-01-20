@@ -1,5 +1,5 @@
-// Package nooplogger implements a unified logger without a driver. See
-// the documentation associated with the Logger and Entry interfaces for
+// Package nooplogger implements a logger without any driver. See the
+// documentation associated with the Logger and Entry interfaces for
 // their respective methods.
 //
 // Noop loggers can be used for testing or to satisfy a logger

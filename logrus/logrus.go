@@ -1,6 +1,6 @@
-// Package logrus implements a unified logger with a Logrus driver. See
-// the documentation associated with the Logger, Entry and
-// UnderlyingLogger interfaces for their respective methods.
+// Package logrus implements a logger with a Logrus driver. See the
+// documentation associated with the Logger, Entry and UnderlyingLogger
+// interfaces for their respective methods.
 //
 package logrus
 

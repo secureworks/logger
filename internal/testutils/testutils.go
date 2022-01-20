@@ -17,6 +17,8 @@ import (
 	"github.com/secureworks/logger/testlogger"
 )
 
+const SentryDSN = `http://thisis:myfakeauth@localhost/1`
+
 // NewConfigWithBuffer generates a default testing config (log.Level is
 // set to log.INFO and EnableErrStack is true) and a linked output
 // buffer that the logger writes too.
@@ -27,7 +29,7 @@ func NewConfigWithBuffer(t *testing.T, logLevel log.Level) (*log.Config, *bytes.
 	out := bytes.NewBuffer(buf)
 	config := log.DefaultConfig(func(envvar string) string {
 		if envvar == log.SentryDSN.String() {
-			return `http://thisis:myfakeauth@localhost/1`
+			return SentryDSN // Ensure a standard Sentry DSN.
 		}
 		return os.Getenv(envvar)
 	})

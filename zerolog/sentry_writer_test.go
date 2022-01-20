@@ -63,7 +63,7 @@ func TestZerolog_SentryWriter_Write(t *testing.T) {
 	defer srv.Close()
 
 	common.InitSentry(sentry.ClientOptions{
-		Dsn:           "http://thisis:myfakeauth@localhost/1",
+		Dsn:           testutils.SentryDSN,
 		HTTPTransport: srv.Transport(),
 	})
 
