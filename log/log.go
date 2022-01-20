@@ -1,5 +1,7 @@
-// Package log provides a unified interface for loggers such as logrus
-// or zerolog, along with Sentry support and other custom options.
+// Package log provides the unified interface for the Secureworks
+// logger. This interface can use underlying logger implementations as
+// drivers, including Logrus and Zerolog, along with support for
+// reporting services including Sentry.
 //
 package log
 
