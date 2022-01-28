@@ -3,12 +3,12 @@ package common
 import (
 	"fmt"
 	"path/filepath"
-	"sync/atomic"
 
 	"github.com/getsentry/sentry-go"
 )
 
-var nonReentrant int32
+// must have buffer of 1
+var onlyOne = make(chan struct{}, 1)
 
 // InitSentry is a shared function for initializing the global "hub"
 // object that manages scopes and clients for Sentry.
@@ -20,16 +20,18 @@ var nonReentrant int32
 // hub, but users will likely expect this to set up Sentry "in total".
 // For now just do what we can so that multiple logger instances use the
 // same thing if desired.
-//
-// QUESTION(PH): why not use sync.Once?
 func InitSentry(opts sentry.ClientOptions) error {
 	var err error
-	if !atomic.CompareAndSwapInt32(&nonReentrant, 0, 1) {
+	select {
+	case onlyOne <- struct{}{}:
+	default:
 		return nil
 	}
+
 	defer func() {
 		if err != nil {
-			atomic.StoreInt32(&nonReentrant, 0) // Allow another call if this fails.
+			// Allow another call if this fails.
+			<-onlyOne
 		}
 	}()
 
