@@ -158,7 +158,7 @@ const (
 // Logger is the minimum interface loggers should implement when used
 // with CTPx packages.
 type Logger interface {
-	// IsLevelEnabled returns true is the level supplied as arg is
+	// IsLevelEnabled returns true if the level supplied as arg is
 	// enabled.
 	IsLevelEnabled(Level) bool
 
@@ -274,7 +274,7 @@ type Entry interface {
 	// implmentation-specific) field.
 	WithUint(key string, us ...uint) Entry
 
-	// WithUint is a type-safe convenience for injecting a time.Time (or
+	// WithTime is a type-safe convenience for injecting a time.Time (or
 	// time.Times, how they are stored is implmentation-specific) field.
 	//
 	// NOTE(IB): many loggers add a "time" key automatically and time

@@ -17,7 +17,7 @@ var defaultConfig = &log.Config{
 	LocalDevel:     false,
 	Format:         log.JSONFormat,
 	EnableErrStack: false,
-	Output:         os.Stderr, // Can't set.
+	Output:         os.Stderr,
 	Sentry: struct {
 		DSN     string
 		Release string
@@ -40,7 +40,7 @@ var loadedConfig = &log.Config{
 	LocalDevel:     true,
 	Format:         log.ImplementationDefaultFormat,
 	EnableErrStack: true,
-	Output:         os.Stderr, // Can't set.
+	Output:         os.Stderr,
 	Sentry: struct {
 		DSN     string
 		Release string

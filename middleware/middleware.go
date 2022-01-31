@@ -15,7 +15,7 @@
 //
 //     // Now every request will have access to the logger in the context.
 //     srv.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-//         entry := log.LoggerFromCtx(r.Context())
+//         logger := log.LoggerFromCtx(r.Context())
 //     })
 //     srv.ListenAndServe()
 //

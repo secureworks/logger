@@ -43,6 +43,8 @@ func NewConfigWithBuffer(t *testing.T, logLevel log.Level) (*log.Config, *bytes.
 // BindSentryClient attaches a Sentry server transport (from fake
 // Sentry) to the Sentry SDK's CurrentHub .It assumes that a logger has
 // been instantiated, which initializes the Sentry SDK.
+// Note this is data-race free but not race-condition free on the Sentry Hub.
+// Use with caution from multiple goroutines.
 func BindSentryClient(t *testing.T, tcp *http.Transport) {
 	t.Helper()
 
