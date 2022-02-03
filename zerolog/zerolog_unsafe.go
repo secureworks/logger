@@ -1,5 +1,5 @@
-//go:build unsafe
-// +build unsafe
+//go:build !safe
+// +build !safe
 
 package zerolog
 
