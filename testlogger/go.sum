@@ -2,8 +2,8 @@ github.com/davecgh/go-spew v1.1.0 h1:ZDRjVQ15GmhC3fiQ8ni8+OwkZQO4DARzQgrnXU1Liz8
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
-github.com/secureworks/logger/log v0.0.0-20220127222910-3bc416d4c2aa h1:/SlpaX2/5ozxWWtq6568gmWyZO2jvB89pmwIZhU3kXw=
-github.com/secureworks/logger/log v0.0.0-20220127222910-3bc416d4c2aa/go.mod h1:+5iJU5cqZ4+TqjfCXFh5X6BFz0vZD6c/3BX1IsXAahk=
+github.com/secureworks/logger/log v0.0.0-20220203224444-59ea4705c925 h1:fNJ7GdQpa1gUJvsOSx+7GhFzE3jz2u8prxedogqfuMw=
+github.com/secureworks/logger/log v0.0.0-20220203224444-59ea4705c925/go.mod h1:+5iJU5cqZ4+TqjfCXFh5X6BFz0vZD6c/3BX1IsXAahk=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/testify v1.7.0 h1:nwc3DEeHmmLAfoZucVR881uASk0Mfjw8xYJ99tb5CcY=
 github.com/stretchr/testify v1.7.0/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
