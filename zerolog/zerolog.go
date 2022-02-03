@@ -163,7 +163,7 @@ func (l *logger) newEntry(lvl zerolog.Level) log.Entry {
 	//
 	// Our own *entry type will write the level as needed.
 	//
-	// TODO(IB): Only using NoLevel silently breaks zerolog.Hook interface.
+	// See: https://github.com/rs/zerolog/issues/408
 	ent := l.lg.WithLevel(zerolog.NoLevel)
 	if l.errStack {
 		ent = ent.Stack()
@@ -428,6 +428,8 @@ func (e *entry) Send() {
 		e.ent = e.ent.Strs(log.CallerField, e.caller)
 	}
 	e.ent = e.ent.Str(zerolog.LevelFieldName, zerolog.LevelFieldMarshalFunc(e.lvl))
+	// Change the level if we can, before calling Msg
+	changeEventLevel(e.ent, e.lvl)
 	// This recycles the zerolog.Entry for us, do not call putEvent again
 	e.ent.Msg(e.msg)
 
