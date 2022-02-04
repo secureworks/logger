@@ -141,6 +141,8 @@ github.com/secureworks/logger/internal v0.0.0-20220127223102-22a7dfffc647/go.mod
 github.com/secureworks/logger/internal v0.0.0-20220203224804-3685f341a5e1/go.mod h1:l0wqskcJMyWaT/J5plTlm34MvjSd1MYn2osxjSXpGw0=
 github.com/secureworks/logger/internal v0.0.0-20220203225233-5486a248ca93 h1:/F7kJ6eoChICRzgHDvHG4oPSb0mK2x9FZ524CihG/oI=
 github.com/secureworks/logger/internal v0.0.0-20220203225233-5486a248ca93/go.mod h1:ZNEuECAceOZUYOwwv4wDPEBbzykUWgMtojtJ+jssQfM=
+github.com/secureworks/logger/internal v0.0.0-20220204201356-b53dec9cfbf4 h1:awqREGYK+K9c2pD2EbuFzMLrMbAFlddZSp6VJGmvtYY=
+github.com/secureworks/logger/internal v0.0.0-20220204201356-b53dec9cfbf4/go.mod h1:ZNEuECAceOZUYOwwv4wDPEBbzykUWgMtojtJ+jssQfM=
 github.com/secureworks/logger/log v0.0.0-20220127222910-3bc416d4c2aa/go.mod h1:+5iJU5cqZ4+TqjfCXFh5X6BFz0vZD6c/3BX1IsXAahk=
 github.com/secureworks/logger/log v0.0.0-20220203224444-59ea4705c925/go.mod h1:+5iJU5cqZ4+TqjfCXFh5X6BFz0vZD6c/3BX1IsXAahk=
 github.com/secureworks/logger/log v0.0.0-20220203224804-3685f341a5e1/go.mod h1:+5iJU5cqZ4+TqjfCXFh5X6BFz0vZD6c/3BX1IsXAahk=
