@@ -14,7 +14,7 @@
 // logging easy (using the "test" testlogger driver).
 //
 // To use the logger you need to import the driver package you want to
-// use and then generate a logger with log.Open and whatver
+// use and then generate a logger with log.Open and whatever
 // configuration you want. The simplest setup would look like:
 //
 //     package main

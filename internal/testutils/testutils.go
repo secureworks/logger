@@ -7,11 +7,13 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"reflect"
 	"testing"
 	"time"
 
 	"github.com/VerticalOps/fakesentry"
 	"github.com/getsentry/sentry-go"
+
 	"github.com/secureworks/logger/log"
 	"github.com/secureworks/logger/middleware"
 	"github.com/secureworks/logger/testlogger"
@@ -79,8 +81,8 @@ func SentryServer(t *testing.T, logMessages bool) (fakesentry.Server, func(t *te
 
 			if testing.Verbose() && logMessages {
 				buf := new(bytes.Buffer)
-				json.Indent(buf, jsonBytes, "", "  ")
-				fmt.Fprintf(os.Stderr, `
+				_ = json.Indent(buf, jsonBytes, "", "  ")
+				_, _ = fmt.Fprintf(os.Stderr, `
 ========================================================================
 Sentry server message received:
 %s
@@ -138,4 +140,108 @@ func RunMiddlewareAround(
 	h.ServeHTTP(resp, req)
 
 	return resp, logger.(*testlogger.Logger)
+}
+
+// AssertEqual is a semantic test assertion for object equality.
+func AssertEqual(t *testing.T, expected interface{}, actual interface{}) {
+	t.Helper()
+	assertEquality(t, expected, actual, true)
+}
+
+// AssertNotEqual is a semantic test assertion for object equality.
+func AssertNotEqual(t *testing.T, expected interface{}, actual interface{}) {
+	t.Helper()
+	assertEquality(t, expected, actual, false)
+}
+
+// AssertSame is a semantic test assertion for referential equality.
+func AssertSame(t *testing.T, expected interface{}, actual interface{}) {
+	t.Helper()
+	assertSameness(t, expected, actual, true)
+}
+
+// AssertNotSame is a semantic test assertion for referential equality.
+func AssertNotSame(t *testing.T, expected interface{}, actual interface{}) {
+	t.Helper()
+	assertSameness(t, expected, actual, false)
+}
+
+// AssertNil is a semantic test assertion for nility.
+func AssertNil(t *testing.T, object interface{}) {
+	t.Helper()
+	assertNility(t, object, true)
+}
+
+// AssertNotNil is a semantic test assertion for nility.
+func AssertNotNil(t *testing.T, object interface{}) {
+	t.Helper()
+	assertNility(t, object, false)
+}
+
+// NOTE(PH): does not handle bytes well, update if we need to check
+// them.
+func assertEquality(t *testing.T, expected interface{}, actual interface{}, wantEqual bool) {
+	t.Helper()
+
+	if expected == nil && actual == nil && !wantEqual {
+		t.Errorf("is equal:\nexpected: %s\nactual: %s\n", expected, actual)
+	}
+
+	isEqual := reflect.DeepEqual(expected, actual)
+	if wantEqual && !isEqual {
+		t.Errorf("not equal:\nexpected: %s\nactual: %s\n", expected, actual)
+	}
+	if !wantEqual && isEqual {
+		t.Errorf("is equal:\nexpected: %s\nactual: %s\n", expected, actual)
+	}
+}
+
+func assertSameness(t *testing.T, expected interface{}, actual interface{}, wantSame bool) {
+	t.Helper()
+
+	isSame := false
+	if expected == actual {
+		isSame = true
+		expectedPtr := reflect.ValueOf(expected)
+		actualPtr := reflect.ValueOf(actual)
+		if expectedPtr.Kind() != reflect.Ptr || actualPtr.Kind() != reflect.Ptr {
+			isSame = false
+		}
+
+		expectedType := reflect.TypeOf(expected)
+		actualType := reflect.TypeOf(actual)
+		if isSame && (expectedType != actualType) {
+			isSame = false
+		}
+	}
+	if wantSame && !isSame {
+		t.Errorf("not same:\nexpected: %s\nactual: %s\n", expected, actual)
+	}
+	if !wantSame && isSame {
+		t.Errorf("is same:\nexpected: %s\nactual: %s\n", expected, actual)
+	}
+}
+
+func assertNility(t *testing.T, object interface{}, wantNil bool) {
+	t.Helper()
+
+	isNil := object == nil
+	if !isNil {
+		value := reflect.ValueOf(object)
+		isNilable := false
+		switch value.Kind() {
+		case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Ptr, reflect.Slice:
+			isNilable = true
+		default:
+		}
+		if isNilable && value.IsNil() {
+			isNil = true
+		}
+	}
+	if wantNil && !isNil {
+		t.Errorf("not nil: %s\n", object)
+	}
+	if !wantNil && isNil {
+		t.Errorf("is nil: %s\n", object)
+	}
 }

@@ -1,11 +1,11 @@
-package log_test
+package logger_test
 
 import (
 	"errors"
 	"testing"
 
+	"github.com/secureworks/logger/internal/testutils"
 	"github.com/secureworks/logger/log"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestOptions_CustomOption(t *testing.T) {
@@ -14,8 +14,8 @@ func TestOptions_CustomOption(t *testing.T) {
 		const a = "A set"
 
 		err := log.CustomOption("SetA", a)(w)
-		assert.NoError(t, err)
-		assert.Equal(t, a, w.ul.A)
+		testutils.AssertNil(t, err)
+		testutils.AssertEqual(t, a, w.ul.A)
 	})
 
 	t.Run("function with single value", func(t *testing.T) {
@@ -23,8 +23,8 @@ func TestOptions_CustomOption(t *testing.T) {
 		const a = "A set"
 
 		err := log.CustomOption("SetA", func() string { return a })(w)
-		assert.NoError(t, err)
-		assert.Equal(t, a, w.ul.A)
+		testutils.AssertNil(t, err)
+		testutils.AssertEqual(t, a, w.ul.A)
 	})
 
 	t.Run("function with multiple values including nil error", func(t *testing.T) {
@@ -34,12 +34,12 @@ func TestOptions_CustomOption(t *testing.T) {
 
 		opt := log.CustomOption("WithAB", func() (string, string, error) { return a, b, nil })
 		err := opt(w)
-		assert.NoError(t, err)
-		assert.NotSame(t, orig, w.ul)
-		assert.Equal(t, a, w.ul.A)
-		assert.Equal(t, b, w.ul.B)
-		assert.Empty(t, orig.A)
-		assert.Empty(t, orig.B)
+		testutils.AssertNil(t, err)
+		testutils.AssertNotSame(t, orig, w.ul)
+		testutils.AssertEqual(t, a, w.ul.A)
+		testutils.AssertEqual(t, b, w.ul.B)
+		testutils.AssertEqual(t, "", orig.A)
+		testutils.AssertEqual(t, "", orig.B)
 	})
 
 	t.Run("malformed function causes error", func(t *testing.T) {
@@ -48,8 +48,8 @@ func TestOptions_CustomOption(t *testing.T) {
 
 		// Pass a func that accepts a value, which we don't support.
 		err := log.CustomOption("SetB", func(i int) string { return b })(w)
-		assert.Error(t, err)
-		assert.NotEqual(t, b, w.ul.B)
+		testutils.AssertNotNil(t, err)
+		testutils.AssertNotEqual(t, b, w.ul.B)
 	})
 
 	t.Run("method returns nil error value", func(t *testing.T) {
@@ -58,9 +58,9 @@ func TestOptions_CustomOption(t *testing.T) {
 		orig := w.ul
 
 		err := log.CustomOption("ChainClearCNil", nil)(w)
-		assert.NoError(t, err)
-		assert.Same(t, orig, w.ul)
-		assert.Empty(t, w.ul.C)
+		testutils.AssertNil(t, err)
+		testutils.AssertSame(t, orig, w.ul)
+		testutils.AssertEqual(t, "", w.ul.C)
 	})
 
 	t.Run("method returns non-nil error value", func(t *testing.T) {
@@ -69,9 +69,9 @@ func TestOptions_CustomOption(t *testing.T) {
 		b := "B"
 
 		err := log.CustomOption("ChainBFailure", func() string { return b })(w)
-		assert.Equal(t, errTheSentinel, err)
-		assert.Same(t, orig, w.ul)
-		assert.Empty(t, w.ul.B)
+		testutils.AssertEqual(t, errTheSentinel, err)
+		testutils.AssertSame(t, orig, w.ul)
+		testutils.AssertEqual(t, "", w.ul.B)
 	})
 
 	t.Run("method that is chainable updates logger", func(t *testing.T) {
@@ -80,10 +80,10 @@ func TestOptions_CustomOption(t *testing.T) {
 		orig := w.ul
 
 		err := log.CustomOption("WithA", "new a")(w)
-		assert.NoError(t, err)
-		assert.NotSame(t, orig, w.ul)
-		assert.Equal(t, "old a", orig.A)
-		assert.Equal(t, "new a", w.ul.A)
+		testutils.AssertNil(t, err)
+		testutils.AssertNotSame(t, orig, w.ul)
+		testutils.AssertEqual(t, "old a", orig.A)
+		testutils.AssertEqual(t, "new a", w.ul.A)
 	})
 
 	t.Run("method that is chainable (non-pointer) updates logger", func(t *testing.T) {
@@ -92,10 +92,10 @@ func TestOptions_CustomOption(t *testing.T) {
 		orig := w.ul
 
 		err := log.CustomOption("WithAVal", "new a")(w)
-		assert.NoError(t, err)
-		assert.NotSame(t, orig, w.ul)
-		assert.Equal(t, "old a", orig.A)
-		assert.Equal(t, "new a", w.ul.A)
+		testutils.AssertNil(t, err)
+		testutils.AssertNotSame(t, orig, w.ul)
+		testutils.AssertEqual(t, "old a", orig.A)
+		testutils.AssertEqual(t, "new a", w.ul.A)
 	})
 
 	t.Run("recover from panic", func(t *testing.T) {
@@ -105,8 +105,8 @@ func TestOptions_CustomOption(t *testing.T) {
 		// Pass func that returns value that is not appropriate for the
 		// reflected method.
 		err := log.CustomOption("WithA", func() int { return 42 })(w)
-		assert.Error(t, err)
-		assert.Same(t, orig, w.ul)
+		testutils.AssertNotNil(t, err)
+		testutils.AssertSame(t, orig, w.ul)
 	})
 }
 
@@ -173,6 +173,6 @@ func (ul *ulLogger) ChainClearCNil() (*ulLogger, error) {
 
 var errTheSentinel = errors.New("Oh noooo")
 
-func (ul *ulLogger) ChainBFailure(b string) (*ulLogger, error) {
+func (ul *ulLogger) ChainBFailure(_ string) (*ulLogger, error) {
 	return nil, errTheSentinel
 }

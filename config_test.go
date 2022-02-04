@@ -6,10 +6,9 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/secureworks/logger/internal/testutils"
 	"github.com/secureworks/logger/log"
 	"github.com/secureworks/logger/testlogger"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 var defaultConfig = &log.Config{
@@ -61,7 +60,7 @@ var loadedConfig = &log.Config{
 func TestDefaultConfig(t *testing.T) {
 	t.Run("with an empty environment", func(t *testing.T) {
 		config := log.DefaultConfig(func(string) string { return "" }) // Ignore env.
-		assert.Equal(t, defaultConfig, config)
+		testutils.AssertEqual(t, defaultConfig, config)
 	})
 
 	t.Run("with environment variables", func(t *testing.T) {
@@ -80,10 +79,12 @@ func TestDefaultConfig(t *testing.T) {
 
 		config := log.DefaultConfig(func(varname string) string { return fakeenv[varname] })
 		// Simplest way to ensure we don't get false negatives.
-		sort.Slice(config.Sentry.Levels, func(i, j int) bool {
-			return config.Sentry.Levels[i] > config.Sentry.Levels[j]
-		})
-		assert.Equal(t, loadedConfig, config)
+		sort.Slice(
+			config.Sentry.Levels, func(i, j int) bool {
+				return config.Sentry.Levels[i] > config.Sentry.Levels[j]
+			},
+		)
+		testutils.AssertEqual(t, loadedConfig, config)
 	})
 
 	t.Run("with Sentry config but missing Sentry DSN", func(t *testing.T) {
@@ -98,15 +99,15 @@ func TestDefaultConfig(t *testing.T) {
 		config := log.DefaultConfig(func(varname string) string {
 			return fakeenv[varname]
 		})
-		assert.Equal(t, defaultConfig, config)
+		testutils.AssertEqual(t, defaultConfig, config)
 	})
 }
 
 func TestOpenRegister(t *testing.T) {
 	t.Run("Open before Register fails", func(t *testing.T) {
 		logger, err := log.Open("newlogger", nil)
-		assert.Nil(t, logger)
-		assert.EqualError(t, err, "log: No logger by name (newlogger)")
+		testutils.AssertNil(t, logger)
+		testutils.AssertEqual(t, "log: No logger by name (newlogger)", err.Error())
 	})
 
 	t.Run("Open after Register succeeds", func(t *testing.T) {
@@ -117,25 +118,25 @@ func TestOpenRegister(t *testing.T) {
 		})
 
 		logger, err := log.Open("newlogger", nil)
-		assert.NoError(t, err)
-		assert.NotNil(t, logger)
+		testutils.AssertNil(t, err)
+		testutils.AssertNotNil(t, logger)
 	})
 
 	t.Run("Open with config sets config", func(t *testing.T) {
 		logger, err := log.Open("test", nil)
-		require.NoError(t, err)
+		testutils.AssertNil(t, err)
 
 		// Test logger uses a bytes.Buffer for Output by default instead of
 		// os.Stderr, so let's just reset that.
 		config := logger.(*testlogger.Logger).Config
 		config.Output = os.Stderr
-		require.Equal(t, defaultConfig, config)
+		testutils.AssertEqual(t, defaultConfig, config)
 
 		logger, err = log.Open("test", loadedConfig)
-		require.NoError(t, err)
+		testutils.AssertNil(t, err)
 
 		config = logger.(*testlogger.Logger).Config
 		config.Output = os.Stderr
-		require.Equal(t, loadedConfig, config)
+		testutils.AssertEqual(t, loadedConfig, config)
 	})
 }
