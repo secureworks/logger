@@ -142,6 +142,22 @@ func RunMiddlewareAround(
 	return resp, logger.(*testlogger.Logger)
 }
 
+// AssertTrue is a semantic test assertion for object truthiness.
+func AssertTrue(t *testing.T, object bool) {
+	t.Helper()
+	if object != true {
+		t.Errorf("is not true")
+	}
+}
+
+// AssertFalse is a semantic test assertion for object truthiness.
+func AssertFalse(t *testing.T, object bool) {
+	t.Helper()
+	if object == true {
+		t.Errorf("is not false")
+	}
+}
+
 // AssertEqual is a semantic test assertion for object equality.
 func AssertEqual(t *testing.T, expected interface{}, actual interface{}) {
 	t.Helper()

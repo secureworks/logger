@@ -9,16 +9,14 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+
 	"github.com/secureworks/logger/internal/testutils"
 	"github.com/secureworks/logger/log"
 	"github.com/secureworks/logger/middleware"
 	_ "github.com/secureworks/logger/testlogger"
-	"github.com/stretchr/testify/require"
 )
 
 func TestNewHTTPServer(t *testing.T) {
-	require := require.New(t)
-
 	var c io.Closer
 	srv := httptest.NewUnstartedServer(nil)
 	logger, _ := log.Open("test", nil)
@@ -27,40 +25,38 @@ func TestNewHTTPServer(t *testing.T) {
 
 	srv.Config.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		logger := log.LoggerFromCtx(r.Context())
-		require.NotNil(logger)
+		testutils.AssertNotNil(t, logger)
 	})
 	srv.Start()
 
 	resp, err := srv.Client().Get(srv.URL)
-	require.NoError(err)
+	testutils.AssertNil(t, err)
 	defer resp.Body.Close()
 
-	require.Equal(http.StatusOK, resp.StatusCode)
+	testutils.AssertEqual(t, http.StatusOK, resp.StatusCode)
 }
 
 func TestHTTPRequestMiddleware(t *testing.T) {
-	require := require.New(t)
-
 	req := httptest.NewRequest(http.MethodGet, "/test/path", nil)
 	resp, logger := testutils.RunMiddlewareAround(t, req, nil, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		entry := log.EntryFromCtx(r.Context())
 		entry.WithStr("Meta", "data").Msg("message here")
 		w.WriteHeader(http.StatusOK)
 	}))
-	require.Equal(http.StatusOK, resp.Code)
-	require.Len(logger.Entries, 1)
+	testutils.AssertEqual(t, http.StatusOK, resp.Code)
+	testutils.AssertEqual(t, 1, len(logger.Entries))
 	entry := logger.Entries[0]
 
-	require.True(entry.IsAsync)
-	require.True(entry.Sent)
-	require.Equal(log.INFO, entry.Level)
-	require.Equal("message here", entry.Message)
-	require.Equal("data", entry.StringField("Meta"))
+	testutils.AssertTrue(t, entry.IsAsync)
+	testutils.AssertTrue(t, entry.Sent)
+	testutils.AssertEqual(t, log.INFO, entry.Level)
+	testutils.AssertEqual(t, "message here", entry.Message)
+	testutils.AssertEqual(t, "data", entry.StringField("Meta"))
 
-	require.Greater(entry.RequestDuration(), time.Duration(0))
-	require.Equal(req.Method, entry.RequestMethod())
-	require.Equal(req.URL.Path, entry.RequestPath())
-	require.Equal(req.RemoteAddr, entry.RequestRemoteAddr())
+	testutils.AssertTrue(t, entry.RequestDuration() > time.Duration(0))
+	testutils.AssertEqual(t, req.Method, entry.RequestMethod())
+	testutils.AssertEqual(t, req.URL.Path, entry.RequestPath())
+	testutils.AssertEqual(t, req.RemoteAddr, entry.RequestRemoteAddr())
 }
 
 func TestHTTPRequestLogAttributes(t *testing.T) {
@@ -70,8 +66,6 @@ func TestHTTPRequestLogAttributes(t *testing.T) {
 	sID := "span_it"
 	cID := "5000"
 	env := "pilot"
-
-	require := require.New(t)
 
 	req := httptest.NewRequest(http.MethodGet, "/test/path", nil)
 	req.Header.Set("X-Request-Id", rID)
@@ -110,46 +104,44 @@ func TestHTTPRequestLogAttributes(t *testing.T) {
 			w.WriteHeader(http.StatusOK)
 		}),
 	)
-	require.Equal(http.StatusOK, resp.Code)
-	require.Len(logger.Entries, 1)
+	testutils.AssertEqual(t, http.StatusOK, resp.Code)
+	testutils.AssertEqual(t, 1, len(logger.Entries))
 	entry := logger.Entries[0]
 
-	require.Equal(rID, entry.StringField("x-request-id"))
-	require.Equal(tID, entry.StringField("x-trace-id"))
-	require.Equal(sID, entry.StringField("x-span-id"))
-	require.Equal(cID, entry.StringField("x-tenant-ctx"))
-	require.Equal(env, entry.StringField("x-environment"))
-	require.Equal(uID, entry.StringField("req.uuid"))
+	testutils.AssertEqual(t, rID, entry.StringField("x-request-id"))
+	testutils.AssertEqual(t, tID, entry.StringField("x-trace-id"))
+	testutils.AssertEqual(t, sID, entry.StringField("x-span-id"))
+	testutils.AssertEqual(t, cID, entry.StringField("x-tenant-ctx"))
+	testutils.AssertEqual(t, env, entry.StringField("x-environment"))
+	testutils.AssertEqual(t, uID, entry.StringField("req.uuid"))
 
-	require.False(entry.HasField("x-other"))
-	require.False(entry.HasField("req.other"))
+	testutils.AssertFalse(t, entry.HasField("x-other"))
+	testutils.AssertFalse(t, entry.HasField("req.other"))
 }
 
 func TestHTTPRequestMiddlewarePanic(t *testing.T) {
-	require := require.New(t)
-
 	req := httptest.NewRequest(http.MethodGet, "/test/path", nil)
 	res, logger := testutils.RunMiddlewareAround(t, req, nil, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		panic("this is fine")
 	}))
-	require.Equal(http.StatusInternalServerError, res.Code)
-	require.Len(logger.Entries, 1)
+	testutils.AssertEqual(t, http.StatusInternalServerError, res.Code)
+	testutils.AssertEqual(t, 1, len(logger.Entries))
 	entry := logger.Entries[0]
 
-	require.True(entry.IsAsync)
-	require.True(entry.Sent)
-	require.Equal(log.ERROR, entry.Level)
+	testutils.AssertTrue(t, entry.IsAsync)
+	testutils.AssertTrue(t, entry.Sent)
+	testutils.AssertEqual(t, log.ERROR, entry.Level)
 
-	require.Greater(entry.RequestDuration(), time.Duration(0))
-	require.Equal(req.Method, entry.RequestMethod())
-	require.Equal(req.URL.Path, entry.RequestPath())
-	require.Equal(req.RemoteAddr, entry.RequestRemoteAddr())
+	testutils.AssertTrue(t, entry.RequestDuration() > time.Duration(0))
+	testutils.AssertEqual(t, req.Method, entry.RequestMethod())
+	testutils.AssertEqual(t, req.URL.Path, entry.RequestPath())
+	testutils.AssertEqual(t, req.RemoteAddr, entry.RequestRemoteAddr())
 
 	pv, ok := entry.Fields[log.PanicValue].(string)
-	require.True(ok)
-	require.Equal("this is fine", pv)
+	testutils.AssertTrue(t, ok)
+	testutils.AssertEqual(t, "this is fine", pv)
 
 	st, ok := entry.Fields[log.PanicStack].(errors.StackTrace)
-	require.True(ok)
-	require.Greater(len(st), 0)
+	testutils.AssertTrue(t, ok)
+	testutils.AssertTrue(t, len(st) > 0)
 }
