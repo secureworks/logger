@@ -28,11 +28,21 @@ Run any Go command and the toolchain will resolve and fetch the `logger` module 
 
 [Documentation is available on pkg.go.dev][godocs]. You should also look at the examples in the main package.
 
+## FAQ
+- Why are there so many go.mods?
+    - In order to keep dependencies in line with the log implementations. If you want zerolog you shouldn't also need logrus.
+- There are some packages with safe and unsafe versions of code. Why is this?
+    - For logrus, the unsafe code is mostly a performance trick, to keep it from generating even more garbage than normal.
+    - For zerolog it is the same as logrus, but it also addresses a small behavior change in the zerolog.Hook interface. See this [issue](https://github.com/rs/zerolog/issues/408) for more.
+    - All unsafe code can be disabled by adding a `safe` or `!unsafe` build tag. This may be useful if you do not desire the changes the unsafe code brings or because you are building for an environment that does not allow unsafe code.
+
 ## License
 
 This library is distributed under the [Apache-2.0 license][apache-2] found in the [LICENSE](./LICENSE) file.
 
 ### Runtime Dependencies
+Note these are dependent on what mods you import. Importing `log` by itself will only yield `testify` for testing.
+Importing `logrus` will only yield its dependencies and not `zerolog`'s for example. 
 
 | Library                                                                    | Purpose                         | License                                                          |
 | -------------------------------------------------------------------------- | ------------------------------- | ---------------------------------------------------------------- |

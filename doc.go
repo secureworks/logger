@@ -33,7 +33,7 @@
 //             panic(err)
 //         }
 //
-//         logger.Entry(log.DEBUG).Msg("logger instantiated")
+//         logger.Debug().Msg("logger instantiated")
 //     }
 //
 // See the examples for common use cases.

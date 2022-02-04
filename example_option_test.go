@@ -3,16 +3,9 @@ package logger_test
 import (
 	"os"
 
-	"github.com/rs/zerolog"
 	"github.com/secureworks/logger/log"
 	_ "github.com/secureworks/logger/zerolog"
 )
-
-type SingleHook struct{}
-
-func (h SingleHook) Run(e *zerolog.Event, level zerolog.Level, msg string) {
-	e.Bool("test_hook", true)
-}
 
 // Options (specifically CustomOption) can be used to specificy behavior
 // for the logger implementation beyond the values in the Config. For

@@ -163,7 +163,7 @@ func (l *logger) newEntry(lvl zerolog.Level) log.Entry {
 	//
 	// Our own *entry type will write the level as needed.
 	//
-	// TODO(IB): Only using NoLevel silently breaks zerolog.Hook interface.
+	// See: https://github.com/rs/zerolog/issues/408
 	ent := l.lg.WithLevel(zerolog.NoLevel)
 	if l.errStack {
 		ent = ent.Stack()
@@ -410,23 +410,32 @@ func (e *entry) Msg(msg string) {
 }
 
 func (e *entry) Send() {
-	if e != nil && e.ent != nil {
-		defer func() {
+	if !e.enabled() {
+		// If we cut out early && the entry is valid, recycle it
+		if !e.notValid() {
 			putEvent(e.ent)
 			e.ent = nil
-		}()
-	}
+		}
 
-	if !e.enabled() {
 		return
 	}
+
+	// nil out zerolog.Entry as we're done with it.
+	// Mostly helps gc and disables future method calls on this type
+	defer func() { e.ent = nil }()
 
 	if len(e.caller) > 0 {
 		e.ent = e.ent.Strs(log.CallerField, e.caller)
 	}
 	e.ent = e.ent.Str(zerolog.LevelFieldName, zerolog.LevelFieldMarshalFunc(e.lvl))
+	// Change the level if we can, before calling Msg
+	changeEventLevel(e.ent, e.lvl)
+	// This recycles the zerolog.Entry for us, do not call putEvent again
 	e.ent.Msg(e.msg)
 
+	// These are called by e.done here:
+	// https://github.com/rs/zerolog/blob/791ca15d999a97768ffd3b040116f9f5a772661a/event.go
+	// They are disabled however by our use of 'NoLevel', so we retain the functions here.
 	switch e.lvl {
 	case zerolog.PanicLevel:
 		panic(e.msg)

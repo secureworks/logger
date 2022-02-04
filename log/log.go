@@ -158,10 +158,6 @@ const (
 // Logger is the minimum interface loggers should implement when used
 // with CTPx packages.
 type Logger interface {
-	// IsLevelEnabled returns true is the level supplied as arg is
-	// enabled.
-	IsLevelEnabled(Level) bool
-
 	// WriteCloser returns an io.Writer that when written to writes logs
 	// at the given level. It is the callers responsibility to call Close
 	// when finished. This is particularly useful for redirecting the
@@ -274,7 +270,7 @@ type Entry interface {
 	// implmentation-specific) field.
 	WithUint(key string, us ...uint) Entry
 
-	// WithUint is a type-safe convenience for injecting a time.Time (or
+	// WithTime is a type-safe convenience for injecting a time.Time (or
 	// time.Times, how they are stored is implmentation-specific) field.
 	//
 	// NOTE(IB): many loggers add a "time" key automatically and time
