@@ -40,7 +40,7 @@ func Example_usingMiddleware() {
 	// Send a request.
 	req, _ := http.NewRequest(http.MethodGet, srv.URL+"/test/path", nil)
 	req.Header.Add("X-Request-Id", "12345")
-	srv.Client().Do(req)
+	_, _ = srv.Client().Do(req)
 
 	// Output:
 	// {"http_method":"GET","http_path":"/test/path","x-request-id":"12345","level":"info"}
