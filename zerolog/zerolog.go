@@ -21,8 +21,8 @@ import (
 // Register logger.
 func init() {
 
-	// These are package vars in Zerolog so putting them here is less
-	// race-y than setting them in newLogger.
+	// These are package vars in Zerolog so putting them here is less race-y
+	// than setting them in newLogger.
 	zerolog.ErrorStackFieldName = log.StackField
 	zerolog.ErrorStackMarshaler = func(err error) interface{} {
 		st, _ := common.WithStackTrace(err)
@@ -143,8 +143,8 @@ func (l *logger) SetLogger(iface interface{}) {
 
 // Zerolog-specific methods.
 
-// An assertable method/interface if someone wants to disable zerolog
-// events at runtime.
+// DisabledEntry is an assertable method/interface if someone wants to
+// disable zerolog events at runtime.
 func (l *logger) DisabledEntry() log.Entry {
 	return (*entry)(nil)
 }
@@ -411,7 +411,7 @@ func (e *entry) Msg(msg string) {
 
 func (e *entry) Send() {
 	if !e.enabled() {
-		// If we cut out early && the entry is valid, recycle it
+		// If we cut out early && the entry is valid, recycle it.
 		if !e.notValid() {
 			putEvent(e.ent)
 			e.ent = nil
@@ -420,22 +420,24 @@ func (e *entry) Send() {
 		return
 	}
 
-	// nil out zerolog.Entry as we're done with it.
-	// Mostly helps gc and disables future method calls on this type
+	// Nil out zerolog.Entry as we're done with it. Mostly helps gc and
+	// disables future method calls on this type.
 	defer func() { e.ent = nil }()
 
 	if len(e.caller) > 0 {
 		e.ent = e.ent.Strs(log.CallerField, e.caller)
 	}
 	e.ent = e.ent.Str(zerolog.LevelFieldName, zerolog.LevelFieldMarshalFunc(e.lvl))
-	// Change the level if we can, before calling Msg
-	changeEventLevel(e.ent, e.lvl)
-	// This recycles the zerolog.Entry for us, do not call putEvent again
-	e.ent.Msg(e.msg)
+
+	changeEventLevel(e.ent, e.lvl) // Change the level if we can, before calling Msg.
+	e.ent.Msg(e.msg)               // Recycles the zerolog.Entry for us (do not call putEvent again).
 
 	// These are called by e.done here:
-	// https://github.com/rs/zerolog/blob/791ca15d999a97768ffd3b040116f9f5a772661a/event.go
-	// They are disabled however by our use of 'NoLevel', so we retain the functions here.
+	//   - https://github.com/rs/zerolog/blob/791ca15d999a97768ffd3b040116f9f5a772661a/event.go
+	//
+	// They are disabled however by our use of 'NoLevel', so we retain the
+	// functions here.
+	//
 	switch e.lvl {
 	case zerolog.PanicLevel:
 		panic(e.msg)
@@ -462,8 +464,8 @@ func (e *entry) SetLogger(l interface{}) {
 
 // Zerolog-specific methods.
 
-// An assertable method/interface if someone wants to disable zerolog
-// events at runtime.
+// DisabledEntry is an assertable method/interface if someone wants to
+// disable zerolog events at runtime.
 func (e *entry) DisabledEntry() log.Entry {
 	if e.notValid() {
 		return e
