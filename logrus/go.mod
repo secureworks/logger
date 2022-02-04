@@ -9,5 +9,4 @@ require (
 	github.com/secureworks/logger/internal v0.0.0-20220203225233-5486a248ca93
 	github.com/secureworks/logger/log v0.0.0-20220203225233-5486a248ca93
 	github.com/sirupsen/logrus v1.8.1
-	github.com/stretchr/testify v1.7.0
 )

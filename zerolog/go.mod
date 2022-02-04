@@ -7,5 +7,4 @@ require (
 	github.com/rs/zerolog v1.26.1
 	github.com/secureworks/logger/internal v0.0.0-20220203225233-5486a248ca93
 	github.com/secureworks/logger/log v0.0.0-20220203225233-5486a248ca93
-	github.com/stretchr/testify v1.7.0
 )

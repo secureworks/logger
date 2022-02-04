@@ -144,8 +144,9 @@ github.com/ryanuber/columnize v2.1.0+incompatible/go.mod h1:sm1tb6uqfes/u+d4ooFo
 github.com/schollz/closestmatch v2.1.0+incompatible/go.mod h1:RtP1ddjLong6gTkbtmuhtR2uUrrJOpYzYRvbcPAid+g=
 github.com/secureworks/logger/internal v0.0.0-20220127223102-22a7dfffc647/go.mod h1:XkWpk/QPsEYkg+er5bOAgzrV0t8+W7iOaEBM0L1IQqA=
 github.com/secureworks/logger/internal v0.0.0-20220203224804-3685f341a5e1/go.mod h1:l0wqskcJMyWaT/J5plTlm34MvjSd1MYn2osxjSXpGw0=
-github.com/secureworks/logger/internal v0.0.0-20220203225233-5486a248ca93 h1:/F7kJ6eoChICRzgHDvHG4oPSb0mK2x9FZ524CihG/oI=
 github.com/secureworks/logger/internal v0.0.0-20220203225233-5486a248ca93/go.mod h1:ZNEuECAceOZUYOwwv4wDPEBbzykUWgMtojtJ+jssQfM=
+github.com/secureworks/logger/internal v0.0.0-20220204173324-54d935ed1b3e h1:iyosulnmcd+4bOXnDJ1/IWPmOMm2UUocmaEQSGgxok0=
+github.com/secureworks/logger/internal v0.0.0-20220204173324-54d935ed1b3e/go.mod h1:ZNEuECAceOZUYOwwv4wDPEBbzykUWgMtojtJ+jssQfM=
 github.com/secureworks/logger/log v0.0.0-20220127222910-3bc416d4c2aa/go.mod h1:+5iJU5cqZ4+TqjfCXFh5X6BFz0vZD6c/3BX1IsXAahk=
 github.com/secureworks/logger/log v0.0.0-20220203224444-59ea4705c925/go.mod h1:+5iJU5cqZ4+TqjfCXFh5X6BFz0vZD6c/3BX1IsXAahk=
 github.com/secureworks/logger/log v0.0.0-20220203224804-3685f341a5e1/go.mod h1:+5iJU5cqZ4+TqjfCXFh5X6BFz0vZD6c/3BX1IsXAahk=
@@ -271,7 +272,6 @@ golang.org/x/xerrors v0.0.0-20191011141410-1b5146add898/go.mod h1:I/5z698sn9Ka8T
 golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
 golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 h1:go1bK/D/BFZV2I8cIQd1NKEZ+0owSTG1fDTci4IqFcE=
 golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
-gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405 h1:yhCVgyC4o1eVCa2tZl7eS0r+SDo693bJlVdllGtEeKM=
 gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
 gopkg.in/fsnotify.v1 v1.4.7/go.mod h1:Tz8NjZHkW78fSQdbUxIjBTcgA1z1m8ZHf0WmKUhAMys=
 gopkg.in/go-playground/assert.v1 v1.2.1/go.mod h1:9RXL0bg/zibRAgZUYszZSwO/z8Y/a8bDuhia5mkpMnE=
