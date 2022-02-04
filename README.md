@@ -67,9 +67,9 @@ This library is distributed under the [Apache-2.0 license][apache-2] found in th
 | [`github.com/rs/zerolog`](https://github.com/rs/zerolog)                   | Logger.                         | [MIT](https://choosealicense.com/licenses/mit/)                  |
 | [`github.com/sirupsen/logrus`](https://github.com/sirupsen/logrus)         | Logger.                         | [MIT](https://choosealicense.com/licenses/mit/)                  |
 | [`github.com/getsentry/sentry-go`](https://github.com/getsentry/sentry-go) | Sentry SDK for error reporting. | [BSD 2-Clause](https://choosealicense.com/licenses/bsd-2-clause) |
-| [`github.com/makasim/sentryhook`](https://github.com/makasim/sentryhook)   | Sentry hook for Logrus          | [MIT](https://choosealicense.com/licenses/mit/)                  |
+| [`github.com/makasim/sentryhook`](https://github.com/makasim/sentryhook)   | Sentry hook for Logrus.         | [MIT](https://choosealicense.com/licenses/mit/)                  |
 
-> _**Note:** these are dependent on what mods you import._ Given which submodule(s) you import, the dependencies 
+> _**Note:** these are different based on what you import._ Given which submodule(s) you use, the dependencies
 > are included as follows:
 >
 > - `github.com/secureworks/logger/log`:
