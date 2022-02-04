@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -170,6 +171,21 @@ func AssertNotEqual(t *testing.T, expected interface{}, actual interface{}) {
 	assertEquality(t, expected, actual, false)
 }
 
+// AssertNearEqual is a semantic test assertion for numeric accuracy.
+func AssertNearEqual(t *testing.T, expected int64, actual int64, delta int64) {
+	t.Helper()
+
+	diff := actual - expected
+	if diff < -delta || diff > delta {
+		t.Errorf(
+			"is not within delta (%d):\nexpected: %d\nactual: %d\n",
+			delta,
+			expected,
+			actual,
+		)
+	}
+}
+
 // AssertSame is a semantic test assertion for referential equality.
 func AssertSame(t *testing.T, expected interface{}, actual interface{}) {
 	t.Helper()
@@ -192,6 +208,18 @@ func AssertNil(t *testing.T, object interface{}) {
 func AssertNotNil(t *testing.T, object interface{}) {
 	t.Helper()
 	assertNility(t, object, false)
+}
+
+// AssertStringContains is a semantic test assertion for partial string matching.
+func AssertStringContains(t *testing.T, expectedContained string, actualContaining string) {
+	t.Helper()
+	if !strings.Contains(actualContaining, expectedContained) {
+		t.Errorf(
+			"does not contain:\nexpected to contain: %s\nactual: %s\n",
+			strings.Trim(expectedContained, "\n"),
+			strings.Trim(actualContaining, "\n"),
+		)
+	}
 }
 
 // NOTE(PH): does not handle bytes well, update if we need to check

@@ -8,10 +8,9 @@ import (
 	"time"
 
 	"github.com/getsentry/sentry-go"
-	"github.com/secureworks/logger/log"
-	"github.com/stretchr/testify/require"
 
 	"github.com/secureworks/logger/internal/testutils"
+	"github.com/secureworks/logger/log"
 )
 
 const (
@@ -22,50 +21,45 @@ const (
 
 func TestLogrus_New(t *testing.T) {
 	t.Run("log level too low does not log", func(t *testing.T) {
-		require := require.New(t)
 		config, out := testutils.NewConfigWithBuffer(t, log.INFO)
 
 		logger, err := log.Open("logrus", config)
-		require.Nil(err)
+		testutils.AssertNil(t, err)
 
 		logger.Debug().Msg(testMessage)
 
 		data, err := ioutil.ReadAll(out)
-		require.Nil(err)
-		require.Equal(len(data), 0) // Nothing is logged for debug when at INFO.
+		testutils.AssertNil(t, err)
+		testutils.AssertEqual(t, len(data), 0) // Nothing is logged for debug when at INFO.
 	})
 
 	t.Run("log level matches does log", func(t *testing.T) {
-		require := require.New(t)
 		config, out := testutils.NewConfigWithBuffer(t, log.DEBUG)
 
 		logger, err := log.Open("logrus", config)
-		require.Nil(err)
+		testutils.AssertNil(t, err)
 
 		logger.Debug().Msg(testMessage)
 
 		data, err := ioutil.ReadAll(out)
-		require.Nil(err)
-		require.Contains(string(data), testMessage)
+		testutils.AssertNil(t, err)
+		testutils.AssertStringContains(t, testMessage, string(data))
 	})
 
 	t.Run("configuration with nil output", func(t *testing.T) {
-		require := require.New(t)
 		config := log.DefaultConfig(nil)
 		config.Output = nil
 
 		logger, err := log.Open("logrus", config)
-		require.Nil(err)
-		require.NotNil(logger)
+		testutils.AssertNil(t, err)
+		testutils.AssertNotNil(t, logger)
 	})
 }
 
 func TestLogrus_Logging(t *testing.T) {
-	require := require.New(t)
-
 	config, out := testutils.NewConfigWithBuffer(t, log.INFO)
 	logger, err := log.Open("logrus", config)
-	require.NoError(err)
+	testutils.AssertNil(t, err)
 
 	logger.Info().WithStr("meta", testFieldValue).Msg(testMessage)
 
@@ -76,23 +70,21 @@ func TestLogrus_Logging(t *testing.T) {
 		Time    time.Time `json:"time"`
 	}
 	err = json.Unmarshal(out.Bytes(), &fields)
-	require.NoError(err)
+	testutils.AssertNil(t, err)
 
-	require.Equal("info", fields.Level)
-	require.Equal(testFieldValue, fields.Meta)
-	require.Equal(testMessage, fields.Message)
-	require.InDelta(time.Now().Unix(), fields.Time.Unix(), 1)
+	testutils.AssertEqual(t, "info", fields.Level)
+	testutils.AssertEqual(t, testFieldValue, fields.Meta)
+	testutils.AssertEqual(t, testMessage, fields.Message)
+	testutils.AssertNearEqual(t, time.Now().Unix(), fields.Time.Unix(), 1)
 }
 
 func TestLogrus_Errors(t *testing.T) {
-	require := require.New(t)
-
 	srv, sentryMsg := testutils.SentryServer(t, false)
 	defer srv.Close()
 
 	config, _ := testutils.NewConfigWithBuffer(t, log.INFO)
 	logger, err := log.Open("logrus", config)
-	require.NoError(err)
+	testutils.AssertNil(t, err)
 
 	testutils.BindSentryClient(t, srv.Transport()) // After logger instantiated.
 
@@ -100,19 +92,19 @@ func TestLogrus_Errors(t *testing.T) {
 
 	var event *sentry.Event
 	err = json.Unmarshal(sentryMsg(t), &event)
-	require.NoError(err)
+	testutils.AssertNil(t, err)
 
 	// Error value.
-	require.NotNil(event)
-	require.Len(event.Exception, 1)
-	require.Equal(testErrorValue, event.Exception[0].Value)
+	testutils.AssertNotNil(t, event)
+	testutils.AssertEqual(t, 1, len(event.Exception))
+	testutils.AssertEqual(t, testErrorValue, event.Exception[0].Value)
 
 	// Stack trace.
-	require.NotNil(event.Exception[0].Stacktrace)
-	require.Greater(len(event.Exception[0].Stacktrace.Frames), 0)
+	testutils.AssertNotNil(t, event.Exception[0].Stacktrace)
+	testutils.AssertTrue(t, len(event.Exception[0].Stacktrace.Frames) > 0)
 
 	// Metadata fields.
 	extra, ok := event.Extra["meta"]
-	require.True(ok)
-	require.Equal(testFieldValue, extra)
+	testutils.AssertTrue(t, ok)
+	testutils.AssertEqual(t, testFieldValue, extra)
 }
