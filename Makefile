@@ -9,5 +9,8 @@ help:
 lint: ## Run go vet and golangci-lint.
 	go vet ./... || go clean ./...; go vet ./... && golangci-lint run ./...
 
-flake: ## Run tests.
-	go test -short -v ./... -test.failfast -test.count 10 -race
+test: ## Run tests.
+	go test -short -v ./... -race;
+	cd middleware && go test -short -v ./... -race;
+	cd logrus && go test -short -v ./... -race;
+	cd zerolog && go test -short -v ./... -race;
