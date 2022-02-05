@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/http/httptest"
 	"os"
 	"reflect"
 	"strings"
@@ -16,8 +15,6 @@ import (
 	"github.com/getsentry/sentry-go"
 
 	"github.com/secureworks/logger/log"
-	"github.com/secureworks/logger/middleware"
-	"github.com/secureworks/logger/testlogger"
 )
 
 const SentryDSN = `http://thisis:myfakeauth@localhost/1`
@@ -118,29 +115,6 @@ Sentry server message received:
 	}
 
 	return sentrySrv, nextMessage
-}
-
-// RunMiddlewareAround wraps a default logging middleware setup around
-// the given handler, executes the given request against it and returns
-// the ResponseRecorder and the test logger involved.
-func RunMiddlewareAround(
-	t *testing.T,
-	req *http.Request,
-	entries *middleware.HTTPRequestLogAttributes,
-	handler http.Handler,
-) (*httptest.ResponseRecorder, *testlogger.Logger) {
-	t.Helper()
-
-	logger, _ := testlogger.New(log.DefaultConfig(nil))
-	resp := httptest.NewRecorder()
-	h := middleware.NewHTTPRequestMiddleware(
-		logger,
-		log.INFO,
-		entries,
-	)(handler)
-	h.ServeHTTP(resp, req)
-
-	return resp, logger.(*testlogger.Logger)
 }
 
 // AssertTrue is a semantic test assertion for object truthiness.

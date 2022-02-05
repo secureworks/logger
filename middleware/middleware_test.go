@@ -13,6 +13,7 @@ import (
 	"github.com/secureworks/logger/internal/testutils"
 	"github.com/secureworks/logger/log"
 	"github.com/secureworks/logger/middleware"
+	"github.com/secureworks/logger/testlogger"
 	_ "github.com/secureworks/logger/testlogger"
 )
 
@@ -38,7 +39,7 @@ func TestNewHTTPServer(t *testing.T) {
 
 func TestHTTPRequestMiddleware(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/test/path", nil)
-	resp, logger := testutils.RunMiddlewareAround(t, req, nil, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	resp, logger := runMiddlewareAround(t, req, nil, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		entry := log.EntryFromCtx(r.Context())
 		entry.WithStr("Meta", "data").Msg("message here")
 		w.WriteHeader(http.StatusOK)
@@ -74,7 +75,7 @@ func TestHTTPRequestLogAttributes(t *testing.T) {
 	req.Header.Set("X-Tenant-Ctx", cID)
 	req.Header.Set("X-Environment", env)
 
-	resp, logger := testutils.RunMiddlewareAround(t, req,
+	resp, logger := runMiddlewareAround(t, req,
 		&middleware.HTTPRequestLogAttributes{
 			Headers: []string{
 				"X-Request-Id",
@@ -121,7 +122,7 @@ func TestHTTPRequestLogAttributes(t *testing.T) {
 
 func TestHTTPRequestMiddlewarePanic(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/test/path", nil)
-	res, logger := testutils.RunMiddlewareAround(t, req, nil, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	res, logger := runMiddlewareAround(t, req, nil, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		panic("this is fine")
 	}))
 	testutils.AssertEqual(t, http.StatusInternalServerError, res.Code)
@@ -144,4 +145,27 @@ func TestHTTPRequestMiddlewarePanic(t *testing.T) {
 	st, ok := entry.Fields[log.PanicStack].(errors.StackTrace)
 	testutils.AssertTrue(t, ok)
 	testutils.AssertTrue(t, len(st) > 0)
+}
+
+// runMiddlewareAround wraps a default logging middleware setup around
+// the given handler, executes the given request against it and returns
+// the ResponseRecorder and the test logger involved.
+func runMiddlewareAround(
+	t *testing.T,
+	req *http.Request,
+	entries *middleware.HTTPRequestLogAttributes,
+	handler http.Handler,
+) (*httptest.ResponseRecorder, *testlogger.Logger) {
+	t.Helper()
+
+	logger, _ := testlogger.New(log.DefaultConfig(nil))
+	resp := httptest.NewRecorder()
+	h := middleware.NewHTTPRequestMiddleware(
+		logger,
+		log.INFO,
+		entries,
+	)(handler)
+	h.ServeHTTP(resp, req)
+
+	return resp, logger.(*testlogger.Logger)
 }
