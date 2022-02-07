@@ -1,2 +1,2 @@
-github.com/secureworks/logger/log v0.0.0-20220205044137-87fc114ad3f5 h1:3seoLXkMYyLg+fPNZMUmQ0vltmB0Eq3jC6J0fz+CIMk=
-github.com/secureworks/logger/log v0.0.0-20220205044137-87fc114ad3f5/go.mod h1:joi16d/v8AfHARO8wsU8o2IDC1zex9gOWjBC+HjXF54=
+github.com/secureworks/logger/log v1.0.0 h1:xk+oUxmExXqu4ifcBRvAO8FZ6+cxSVuO5Ma2dqVQxFU=
+github.com/secureworks/logger/log v1.0.0/go.mod h1:joi16d/v8AfHARO8wsU8o2IDC1zex9gOWjBC+HjXF54=
