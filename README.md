@@ -1,9 +1,5 @@
 # Secureworks Unified Logging Library
 
-[![logger release (latest SemVer)](https://img.shields.io/github/v/release/secureworks/taegis-sdk-go?sort=semver)](https://github.com/secureworks/taegis-sdk-go/releases)
-[![Test Status](https://github.com/secureworks/taegis-sdk-go/workflows/gitleaks/badge.svg)](https://github.com/secureworks/taegis-sdk-go/actions?query=workflow%3Agitleaks)
-[![Coverage Status](https://coveralls.io/repos/github/secureworks/taegis-sdk-go/badge.svg?branch=master)](https://coveralls.io/github/secureworks/taegis-sdk-go?branch=master)
-
 `secureworks/logger` is a unified interface that wraps popular logging libraries such as [Logrus][logrus] and 
 [Zerolog][zerolog], and can instrument automatic reporting to services such as [Sentry][sentry]... _And that is just 
 the beginning!_
