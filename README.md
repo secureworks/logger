@@ -50,7 +50,7 @@ You may run any Go command and the toolchain will resolve and fetch the required
       `zerolog` you shouldn't also need `logrus`; if you want to write code that consumes the shared interface you 
       shouldn't need to depend on either implementation. 
 - There are some packages with "safe" and "unsafe" versions of code. Why is this?
-    - First of all: *unsafe* refers to using [the Go standard library `unsafe`][unsafe], which allows us to step outside of Go's type-safety rules. This code is no more "not safe" than a typical C program.
+    - *unsafe* refers to using [the Go standard library `unsafe`][unsafe], which allows us to step outside of Go's type-safety rules. This code is no more "not safe" than a typical C program.
     - While we use the unsafe code (less type-safe) by default, this can be disabled by adding a `safe` or `!unsafe` build tag. This may be useful if you are building for an environment that does not allow unsafe (less type-safe) code.
     - For `zerolog` and `logrus` the unsafe code is used for a big performance boost.
     - For `zerolog` it also addresses a small behavior change in the `zerolog.Hook` interface. **[See this issue for more.](https://github.com/rs/zerolog/issues/408)**
