@@ -49,11 +49,11 @@ You may run any Go command and the toolchain will resolve and fetch the required
     - We have broken the packages up in order to keep dependencies in line with the log implementations. If you want 
       `zerolog` you shouldn't also need `logrus`; if you want to write code that consumes the shared interface you 
       shouldn't need to depend on either implementation. 
-- There are some packages with safe and unsafe versions of code. Why is this?
-    - For `logrus`, the unsafe code is used for performance: this code reduces the amount of cruft in the logs.
-    - For `zerolog` the situation is the same as logrus, but also addresses a small behavior change in the `zerolog.
-      Hook` interface. **[See this issue for more.](https://github.com/rs/zerolog/issues/408)**
-    - All unsafe code can be disabled by adding a `safe` or `!unsafe` build tag. This may be useful if you do not desire the changes the unsafe code brings or because you are building for an environment that does not allow unsafe code.
+- There are some packages with "safe" and "unsafe" versions of code. Why is this?
+    - First of all: *unsafe* refers to using [the Go standard library `unsafe`][unsafe], which allows us to step outside of Go's type-safety rules. This code is no more "not safe" than a typical C program.
+    - While we use the unsafe (less type safe) by default, this can be disabled by adding a `safe` or `!unsafe` build tag. This may be useful if you are building for an environment that does not allow unsafe (less type safe) code.
+    - For `zerolog` and `logrus` the unsafe code is used for a big performance boost.
+    - For `zerolog` it also addresses a small behavior change in the `zerolog.Hook` interface. **[See this issue for more.](https://github.com/rs/zerolog/issues/408)**
 
 ## License
 
@@ -104,3 +104,4 @@ This library is distributed under the [Apache-2.0 license][apache-2] found in th
 [zerolog]: https://github.com/rs/zerolog
 [sentry]: https://docs.sentry.io/platforms/go/
 [apache-2]: https://choosealicense.com/licenses/apache-2.0/
+[unsafe]: https://pkg.go.dev/unsafe
