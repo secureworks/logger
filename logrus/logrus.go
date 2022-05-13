@@ -91,8 +91,9 @@ func newLogger(config *log.Config, opts ...log.Option) (log.Logger, error) {
 // Logger implementation.
 
 type logger struct {
-	lg       *logrus.Logger
-	errStack bool
+	lg              *logrus.Logger
+	errStack        bool
+	reusableEntries bool
 }
 
 var _ log.Logger = (*logger)(nil)
@@ -155,6 +156,7 @@ func (l *logger) newEntry(lvl logrus.Level) *entry {
 	return &entry{
 		ent:      logrus.NewEntry(l.lg),
 		errStack: l.errStack,
+		reuse:    l.reusableEntries,
 		lvl:      lvl,
 	}
 }
@@ -188,6 +190,7 @@ type entry struct {
 	lvl      logrus.Level
 	async    bool
 	errStack bool
+	reuse    bool
 	msg      string
 }
 
@@ -353,7 +356,12 @@ func (e *entry) Send() {
 		return
 	}
 
-	defer releaseEntry(e.ent.Logger, e.ent)
+	if !e.reuse {
+		defer func() {
+			releaseEntry(e.ent.Logger, e.ent)
+			e.ent = nil
+		}()
+	}
 
 	switch e.lvl {
 	case logrus.PanicLevel:
@@ -364,7 +372,7 @@ func (e *entry) Send() {
 		e.ent.Log(e.lvl, e.msg)
 	}
 
-	e.ent = nil
+	e.msg = ""
 }
 
 // UnderlyingLogger implementation.

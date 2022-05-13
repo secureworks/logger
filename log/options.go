@@ -5,6 +5,9 @@ import (
 	"reflect"
 )
 
+// Note the tests for these were moved into the root module of
+// this repo in order to import internal/testutils
+
 // Option is a function type that accepts an interface value and returns
 // an error. Use it to handle applying settings directly to the logger
 // implementation that are not covered by the Config.

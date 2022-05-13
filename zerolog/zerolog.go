@@ -83,9 +83,10 @@ func newLogger(config *log.Config, opts ...log.Option) (log.Logger, error) {
 // Logger implementation.
 
 type logger struct {
-	lg       *zerolog.Logger
-	lvl      zerolog.Level
-	errStack bool
+	lg              *zerolog.Logger
+	lvl             zerolog.Level
+	errStack        bool
+	reusableEntries bool
 }
 
 var _ log.Logger = (*logger)(nil)
@@ -155,6 +156,20 @@ func (l *logger) DisabledEntry() log.Entry {
 func (l *logger) newEntry(lvl zerolog.Level) log.Entry {
 	if l.notValid() {
 		return l.DisabledEntry()
+	}
+
+	if l.reusableEntries {
+		zctx := l.lg.With()
+		if l.errStack {
+			zctx = zctx.Stack()
+		}
+
+		return &zcontext{
+			zctx:   zctx,
+			caller: make([]string, 0, 1),
+			loglvl: l.lvl,
+			lvl:    lvl,
+		}
 	}
 
 	// We have to use NoLevel or we can't change them after the fact:

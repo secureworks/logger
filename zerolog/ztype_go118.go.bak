@@ -1,0 +1,35 @@
+//go:build go1.18
+// This file is straight up not allowed despite build flag
+// https://github.com/golang/go/issues/52880
+
+package zerolog
+
+import "github.com/rs/zerolog"
+
+// Generics continue to be a great fit for this entire repo
+// would likely cut code by more than half, the below interface
+// just doesn't work
+// type zType interface {
+//	 Str(string) zType
+//	 // ...
+// }
+//
+// For pre 1.18 another sub type that delegates to a zerolog.Entry
+// or zerolog.Context would work, though it wouldn't result in much
+// less code than zcontext_entry.go already has. Leaving it
+// as is with a copy is easier to move to generics later.
+
+type zUnion interface {
+	*zerolog.Event | zerolog.Context
+}
+
+type zType[Z zUnion] interface {
+	Err(error) Z
+	Str(string) Z
+	Strs(string, []string) Z
+	// ... all other methods they have in common that we want to use
+	// then have *entry use zType
+}
+
+var _ zType[*zerolog.Event]
+var _ zType[zerolog.Context]
