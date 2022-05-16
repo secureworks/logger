@@ -89,7 +89,7 @@ func NewHTTPServer(logger log.Logger, srvLvl log.Level) (*http.Server, io.Closer
 // If desired, the default attributes may also be skipped.
 type HTTPRequestLogAttributes struct {
 	Headers        []string
-	Synthetics     map[string]func(*http.Request) string
+	Synthetics     map[string]func(http.ResponseWriter, *http.Request) string
 	SkipDuration   bool
 	SkipMethod     bool
 	SkipPath       bool
@@ -129,7 +129,7 @@ func NewHTTPRequestMiddleware(logger log.Logger, lvl log.Level, attrs *HTTPReque
 				addIfPresent(header, r, entry)
 			}
 			for header, valueFn := range attrs.Synthetics {
-				addIfAvailable(header, valueFn(r), entry)
+				addIfAvailable(header, valueFn(w, r), entry)
 			}
 		}
 
