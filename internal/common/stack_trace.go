@@ -1,6 +1,9 @@
 package common
 
-import "github.com/pkg/errors"
+import (
+	"github.com/pkg/errors"
+	"runtime"
+)
 
 // StackTracer defines a common interface for extracting stack
 // information. Sentry and several other packages use this interface.
@@ -23,8 +26,27 @@ func WithStackTrace(err error) (StackTracer, error) {
 
 	st, ok := err.(StackTracer)
 	if !ok {
-		err = errors.WithStack(err)
+		err = WithStack(err)
 		st = err.(StackTracer)
 	}
 	return st, err
+}
+
+// WithStack annotates err with a stack trace at the point WithStack was called.
+// If err is nil, WithStack returns nil.
+func WithStack(err error) error {
+	if err == nil {
+		return nil
+	}
+	return &withStack{
+		err,
+		callers(),
+	}
+}
+func callers() *stack {
+	const depth = 32
+	var pcs [depth]uintptr
+	n := runtime.Callers(6, pcs[:])
+	var st stack = pcs[0:n]
+	return &st
 }
