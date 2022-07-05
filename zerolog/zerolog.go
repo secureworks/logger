@@ -5,6 +5,7 @@
 package zerolog
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -16,6 +17,10 @@ import (
 
 	"github.com/secureworks/logger/internal/common"
 	"github.com/secureworks/logger/log"
+)
+
+var (
+	nilError = errors.New("nil passed in to WithError")
 )
 
 // Register logger.
@@ -279,8 +284,16 @@ func (e *entry) WithError(errs ...error) log.Entry {
 	}
 
 	if le == 1 {
+		if errs[0] == nil {
+			errs[0] = nilError
+		}
 		e.ent = e.ent.Err(errs[0])
 	} else {
+		for idx, err := range errs {
+			if err == nil {
+				errs[idx] = nilError
+			}
+		}
 		e.ent = e.ent.Errs(zerolog.ErrorFieldName, errs)
 	}
 	return e
