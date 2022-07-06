@@ -1,4 +1,4 @@
-module github.com/secureworks/logger/testlogger
+module github.com/acgreek/logger/testlogger
 
 go 1.16
 
