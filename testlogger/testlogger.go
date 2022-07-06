@@ -94,6 +94,8 @@ func (l *Logger) Entry(lvl log.Level) log.Entry {
 		Level:  lvl,
 		Fields: make(map[string]interface{}),
 	}
+	l.outputMutex.Lock()
+	defer l.outputMutex.Unlock()
 	l.Entries = append(l.Entries, entry)
 	return entry
 }
