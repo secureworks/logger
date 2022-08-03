@@ -88,12 +88,13 @@ func NewHTTPServer(logger log.Logger, srvLvl log.Level) (*http.Server, io.Closer
 //
 // If desired, the default attributes may also be skipped.
 type HTTPRequestLogAttributes struct {
-	Headers        []string
-	Synthetics     map[string]func(*http.Request) string
-	SkipDuration   bool
-	SkipMethod     bool
-	SkipPath       bool
-	SkipRemoteAddr bool
+	Headers            []string
+	Synthetics         map[string]func(*http.Request) string
+	SyntheticsResponse map[string]func(ResponseWriter) string
+	SkipDuration       bool
+	SkipMethod         bool
+	SkipPath           bool
+	SkipRemoteAddr     bool
 }
 
 // NewHTTPRequestMiddleware returns net/http compatible middleware for
@@ -104,10 +105,10 @@ type HTTPRequestLogAttributes struct {
 // used.
 func NewHTTPRequestMiddleware(logger log.Logger, lvl log.Level, attrs *HTTPRequestLogAttributes) func(http.Handler) http.Handler {
 	if !lvl.IsValid() {
-		lvl = log.Level(log.INFO)
+		lvl = log.INFO
 	}
 
-	logEntry := func(w http.ResponseWriter, r *http.Request, entry log.Entry, start time.Time) {
+	logEntry := func(w ResponseWriter, r *http.Request, entry log.Entry, start time.Time) {
 		if attrs == nil || attrs != nil && !attrs.SkipMethod {
 			entry.WithStr(log.ReqMethod, r.Method)
 		}
@@ -130,6 +131,9 @@ func NewHTTPRequestMiddleware(logger log.Logger, lvl log.Level, attrs *HTTPReque
 			}
 			for header, valueFn := range attrs.Synthetics {
 				addIfAvailable(header, valueFn(r), entry)
+			}
+			for header, valueFn := range attrs.SyntheticsResponse {
+				addIfAvailable(header, valueFn(w), entry)
 			}
 		}
 
@@ -160,8 +164,11 @@ func NewHTTPRequestMiddleware(logger log.Logger, lvl log.Level, attrs *HTTPReque
 			ctx := log.CtxWithEntry(r.Context(), entry)
 			r = r.WithContext(ctx)
 
-			defer logEntry(w, r, entry, time.Now())
-			next.ServeHTTP(w, r)
+			// Wrap the response writer with the logger version.
+			w2 := NewResponseWriter(w)
+
+			defer logEntry(w2, r, entry, time.Now())
+			next.ServeHTTP(w2, r)
 		})
 	}
 }
