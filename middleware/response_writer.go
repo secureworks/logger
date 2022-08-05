@@ -18,10 +18,10 @@ import (
 // in turn. This writer does not support http.Pusher.
 //
 // One issue is that our implementation fulfills both http.Flusher and
-// http.Hijacker regardless of whether they do. Often calling code will
-// assert against an interface to check if the http. ResponseWriter may
-// also implement these: this can lead to false positives when using
-// this library.
+// http.Hijacker regardless of whether the underlying response writer
+// does. Often, calling code will assert against an interface to check
+// if an http.ResponseWriter may also implement these: this can lead to
+// false positives when using this library.
 //
 // Does not hold a separate response body buffer. Log in the application
 // for this sort of data.
@@ -54,6 +54,8 @@ type responseWriter struct {
 	status     string
 	bodySize   int
 }
+
+var _ http.ResponseWriter = (*responseWriter)(nil)
 
 // Getters.
 
