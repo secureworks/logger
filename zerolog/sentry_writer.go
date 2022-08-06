@@ -57,7 +57,10 @@ func (sw *sentryWriter) Write(msg []byte) (n int, err error) {
 
 	// Extract JSON log entry into a basic container.
 	data := make(map[string]interface{})
-	json.Unmarshal(msg, &data)
+	err = json.Unmarshal(msg, &data)
+	if err != nil {
+		return
+	}
 	delete(data, zerolog.LevelFieldName) // Remove the level field.
 	if len(data) == 0 {
 		return

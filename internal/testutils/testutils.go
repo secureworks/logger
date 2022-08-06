@@ -120,7 +120,7 @@ Sentry server message received:
 // AssertTrue is a semantic test assertion for object truthiness.
 func AssertTrue(t *testing.T, object bool) {
 	t.Helper()
-	if object != true {
+	if !object {
 		t.Errorf("is not true")
 	}
 }
@@ -128,7 +128,7 @@ func AssertTrue(t *testing.T, object bool) {
 // AssertFalse is a semantic test assertion for object truthiness.
 func AssertFalse(t *testing.T, object bool) {
 	t.Helper()
-	if object == true {
+	if object {
 		t.Errorf("is not false")
 	}
 }

@@ -144,7 +144,7 @@ func (l *Logger) WriteCloser(_ log.Level) io.WriteCloser { return l }
 // WriteCloser implementation.
 
 func (l *Logger) Write(p []byte) (int, error) { return l.WriteCloserBuffer.Write(p) }
-func (Logger) Close() error                   { return nil }
+func (*Logger) Close() error                  { return nil }
 
 // Entry implementation.
 
@@ -305,7 +305,7 @@ func (e *Entry) Send() {
 	byt, err := json.Marshal(fields)
 	if err == nil {
 		e.Logger.entriesMutex.Lock()
-		e.Logger.Config.Output.Write(byt)
+		_, _ = e.Logger.Config.Output.Write(byt)
 		e.Logger.entriesMutex.Unlock()
 		e.Sent = true
 	}

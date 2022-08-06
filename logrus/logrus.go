@@ -30,8 +30,6 @@ func init() {
 func newLogger(config *log.Config, opts ...log.Option) (log.Logger, error) {
 	logrusLogger := logrus.New()
 
-	var badone string
-
 	if config.Output == nil {
 		config.Output = os.Stderr
 	}

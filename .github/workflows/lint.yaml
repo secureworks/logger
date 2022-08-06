@@ -7,7 +7,7 @@ permissions:
 
 jobs:
   resolve-modules:
-    name: Resolve Modules
+    name: resolve modules
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}

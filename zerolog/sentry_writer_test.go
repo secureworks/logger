@@ -60,7 +60,7 @@ func TestZerolog_SentryWriter_Write(t *testing.T) {
 	srv, sentryMsg := testutils.SentryServer(t, false)
 	defer srv.Close()
 
-	common.InitSentry(sentry.ClientOptions{
+	_ = common.InitSentry(sentry.ClientOptions{
 		Dsn:           testutils.SentryDSN,
 		HTTPTransport: srv.Transport(),
 	})
