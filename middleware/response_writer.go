@@ -12,17 +12,18 @@ import (
 // unattainable in the default http.ResponseWriter interface.
 //
 // In order not to break basic net/http interfaces that are commonly
-// implemented (http.Flusher, http.Hijacker http.Pusher), we handle
+// implemented (http.Flusher, http.Hijacker, and http.Pusher), we handle
 // these as well, passing to the underlying response writer if it
 // implements them in turn.
 //
 // One issue is that the available implementations will always fulfill
-// http.Flusher, even when only http.Hijacker or http.Pusher is
-// implemented by the underlying response writer. While this mirrors the
-// most common implementations (the standard HTTP/1.1 and HTTP/2
-// response writers, eg), it may lead to false positive http.Flusher
-// type assertions. Since an unimplemented call to Flush is a no-op,
-// this can be regarded as a minor issue.
+// http.Flusher if any of the above "alternate" interfaces is
+// implemented. Even when the underlying response writer is only
+// http.Hijacker or http.Pusher, the wrapper implements http.Flusher.
+// While this mirrors the most common types (the standard HTTP/1.1 and
+// HTTP/2 response writers, eg, all implement flusher), it may lead to
+// false positive http.Flusher type assertions. Since an unimplemented
+// call to Flush is a no-op, this can be regarded as a minor issue.
 //
 // Does not hold a separate response body buffer. Log in the application
 // for this sort of data.

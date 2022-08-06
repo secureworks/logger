@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"bytes"
 	"errors"
-	"fmt"
 	"net"
 	"net/http"
 	"testing"
@@ -178,8 +177,7 @@ func TestResponseWriter_Flush(t *testing.T) {
 	t.Run("is a no-op when underlying alt response writer does not implement", func(t *testing.T) {
 		w := middleware.NewResponseWriter(&mockHijackerOnly{})
 		flusher, ok := w.(http.Flusher)
-		fmt.Printf("%T\n", w)
-		fmt.Println(flusher, ok)
+		testutils.AssertTrue(t, ok)
 		assertNotPanics(t, func() { flusher.Flush() })
 	})
 
