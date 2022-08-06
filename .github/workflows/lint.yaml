@@ -12,8 +12,7 @@ jobs:
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
-      - name: Checkout Sources
-        uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - id: set-matrix
         run: ./.github/tools/resolve-modules.sh
   lint:
@@ -21,7 +20,8 @@ jobs:
     needs: resolve-modules
     runs-on: ubuntu-latest
     strategy:
-      matrix: ${{ fromJson(needs.resolve-modules.outputs.matrix) }}
+      matrix:
+        module: ${{ fromJson(needs.resolve-modules.outputs.matrix) }}
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-go@v3
@@ -31,4 +31,4 @@ jobs:
         uses: golangci/golangci-lint-action@v3
         with:
           version: v1.42
-          working-directory: ${{ matrix.workdir }}
+          working-directory: ${{ matrix.module }}
