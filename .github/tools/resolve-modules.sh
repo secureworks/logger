@@ -5,5 +5,9 @@
 
 echo "Resolving modules in $(pwd)"
 
-PATHS=$(find . -type f -name go.mod | awk '{ printf "{\"workdir\":\"%s\"},", $1; }')
+PATHS=$(
+  find . -type f -name go.mod -print0 \
+    | xargs -0 dirname \
+    | awk '{ printf "{\"workdir\":\"%s\"},", $1; }'
+)
 echo "::set-output name=matrix::{\"include\":[${PATHS%?}]}"
