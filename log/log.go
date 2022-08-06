@@ -124,13 +124,13 @@ func (l LoggerFormat) IsValid() bool {
 const (
 	// ReqDuration is a key for Logger data concerning HTTP request
 	// logging.
-	ReqDuration = "request_duration"
+	ReqDuration = "duration"
 
 	// ReqPath is a key for Logger data concerning HTTP request logging.
-	ReqPath = "http_path"
+	ReqPath = "http.url_details.path"
 
 	// ReqMethod is a key for Logger data concerning HTTP request logging.
-	ReqMethod = "http_method"
+	ReqMethod = "http.method"
 
 	// ReqRemoteAddr is a key for Logger data concerning HTTP request
 	// logging.
