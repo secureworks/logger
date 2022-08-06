@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"errors"
+	"fmt"
 	"net"
 	"net/http"
 	"testing"
@@ -29,22 +30,52 @@ func (w *mockRW) WriteHeader(statusCode int) { w.StatusCode = statusCode }
 
 func (w *mockRW) Header() http.Header { return w.Hdr }
 
-type mockHijackerFlusher struct {
+type mockHijackerOnly struct{}
+
+func (w *mockHijackerOnly) Write(_ []byte) (int, error) { return 0, nil }
+
+func (w *mockHijackerOnly) WriteHeader(_ int) {}
+
+func (w *mockHijackerOnly) Header() http.Header { return http.Header{} }
+
+func (w *mockHijackerOnly) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	return nil, nil, nil
+}
+
+type mockHTTP11RW struct {
 	CalledFlush  bool
 	CalledHijack bool
 }
 
-func (w *mockHijackerFlusher) Write(_ []byte) (int, error) { return 0, nil }
+func (w *mockHTTP11RW) Write(_ []byte) (int, error) { return 0, nil }
 
-func (w *mockHijackerFlusher) WriteHeader(_ int) {}
+func (w *mockHTTP11RW) WriteHeader(_ int) {}
 
-func (w *mockHijackerFlusher) Header() http.Header { return http.Header{} }
+func (w *mockHTTP11RW) Header() http.Header { return http.Header{} }
 
-func (w *mockHijackerFlusher) Flush() { w.CalledFlush = true }
+func (w *mockHTTP11RW) Flush() { w.CalledFlush = true }
 
-func (w *mockHijackerFlusher) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+func (w *mockHTTP11RW) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 	w.CalledHijack = true
 	return nil, nil, nil
+}
+
+type mockHTTP2RW struct {
+	CalledFlush bool
+	CalledPush  bool
+}
+
+func (w *mockHTTP2RW) Write(_ []byte) (int, error) { return 0, nil }
+
+func (w *mockHTTP2RW) WriteHeader(_ int) {}
+
+func (w *mockHTTP2RW) Header() http.Header { return http.Header{} }
+
+func (w *mockHTTP2RW) Flush() { w.CalledFlush = true }
+
+func (w *mockHTTP2RW) Push(_ string, _ *http.PushOptions) error {
+	w.CalledPush = true
+	return nil
 }
 
 func TestResponseWriter(t *testing.T) {
@@ -138,39 +169,66 @@ func TestResponseWriter_BodySize(t *testing.T) {
 }
 
 func TestResponseWriter_Flush(t *testing.T) {
-	t.Run("is a no-op when underlying response writer does not implement", func(t *testing.T) {
+	t.Run("if underlying response writer does not implement alt interface; does not implement", func(t *testing.T) {
 		w := middleware.NewResponseWriter(&mockRW{Buffer: new(bytes.Buffer)})
-		flusher, _ := w.(http.Flusher)
+		_, ok := w.(http.Flusher)
+		testutils.AssertFalse(t, ok)
+	})
+
+	t.Run("is a no-op when underlying alt response writer does not implement", func(t *testing.T) {
+		w := middleware.NewResponseWriter(&mockHijackerOnly{})
+		flusher, ok := w.(http.Flusher)
+		fmt.Printf("%T\n", w)
+		fmt.Println(flusher, ok)
 		assertNotPanics(t, func() { flusher.Flush() })
 	})
 
 	t.Run("when implemented, passes through to underlying response writer", func(t *testing.T) {
-		mock := &mockHijackerFlusher{}
-		w := middleware.NewResponseWriter(mock)
-		flusher, _ := w.(http.Flusher)
+		mock1 := &mockHTTP11RW{}
+		w := middleware.NewResponseWriter(mock1)
+		flusher, ok := w.(http.Flusher)
+		testutils.AssertTrue(t, ok)
 		flusher.Flush()
-		testutils.AssertTrue(t, mock.CalledFlush)
+		testutils.AssertTrue(t, mock1.CalledFlush)
+
+		mock2 := &mockHTTP2RW{}
+		w = middleware.NewResponseWriter(mock2)
+		flusher, ok = w.(http.Flusher)
+		testutils.AssertTrue(t, ok)
+		flusher.Flush()
+		testutils.AssertTrue(t, mock2.CalledFlush)
 	})
 }
 
 func TestResponseWriter_Hijack(t *testing.T) {
-	t.Run("returns an error when underlying response writer does not implement", func(t *testing.T) {
+	t.Run("if underlying response writer does not implement hijacker; does not implement", func(t *testing.T) {
 		w := middleware.NewResponseWriter(&mockRW{Buffer: new(bytes.Buffer)})
-		hijacker, _ := w.(http.Hijacker)
-		assertNotPanics(t, func() {
-			conn, rw, err := hijacker.Hijack()
-			testutils.AssertNil(t, conn)
-			testutils.AssertNil(t, rw)
-			testutils.AssertEqual(t, err.Error(), "the underlying ResponseWriter does not implement http.Hijacker")
-		})
+		_, ok := w.(http.Hijacker)
+		testutils.AssertFalse(t, ok)
 	})
 
 	t.Run("when implemented, passes through to underlying response writer", func(t *testing.T) {
-		mock := &mockHijackerFlusher{}
+		mock := &mockHTTP11RW{}
 		w := middleware.NewResponseWriter(mock)
 		hijacker, _ := w.(http.Hijacker)
 		_, _, _ = hijacker.Hijack() // TODO(PH): IDK, maybe should check these?
 		testutils.AssertTrue(t, mock.CalledHijack)
+	})
+}
+
+func TestResponseWriter_Pusher(t *testing.T) {
+	t.Run("if underlying response writer does not implement pusher; does not implement", func(t *testing.T) {
+		w := middleware.NewResponseWriter(&mockRW{Buffer: new(bytes.Buffer)})
+		_, ok := w.(http.Pusher)
+		testutils.AssertFalse(t, ok)
+	})
+
+	t.Run("when implemented, passes through to underlying response writer", func(t *testing.T) {
+		mock := &mockHTTP2RW{}
+		w := middleware.NewResponseWriter(mock)
+		pusher, _ := w.(http.Pusher)
+		_ = pusher.Push("", nil) // TODO(PH): IDK, maybe should check these?
+		testutils.AssertTrue(t, mock.CalledPush)
 	})
 }
 

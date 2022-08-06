@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -13,15 +12,17 @@ import (
 // unattainable in the default http.ResponseWriter interface.
 //
 // In order not to break basic net/http interfaces that are commonly
-// implemented (http.Flusher and http.Hijacker), we handle these as
-// well, passing to the underlying response writer if it implements them
-// in turn. This writer does not support http.Pusher.
+// implemented (http.Flusher, http.Hijacker http.Pusher), we handle
+// these as well, passing to the underlying response writer if it
+// implements them in turn.
 //
-// One issue is that our implementation fulfills both http.Flusher and
-// http.Hijacker regardless of whether the underlying response writer
-// does. Often, calling code will assert against an interface to check
-// if an http.ResponseWriter may also implement these: this can lead to
-// false positives when using this library.
+// One issue is that the available implementations will always fulfill
+// http.Flusher, even when only http.Hijacker or http.Pusher is
+// implemented by the underlying response writer. While this mirrors the
+// most common implementations (the standard HTTP/1.1 and HTTP/2
+// response writers, eg), it may lead to false positive http.Flusher
+// type assertions. Since an unimplemented call to Flush is a no-op,
+// this can be regarded as a minor issue.
 //
 // Does not hold a separate response body buffer. Log in the application
 // for this sort of data.
@@ -43,7 +44,28 @@ type ResponseWriter interface {
 // NewResponseWriter returns a logging-specific ResponseWriter that
 // wraps an http.ResponseWriter, for use in logging middleware.
 func NewResponseWriter(w http.ResponseWriter) ResponseWriter {
-	return &responseWriter{ResponseWriter: w}
+	var rw ResponseWriter = &responseWriter{ResponseWriter: w}
+
+	f, isFlusher := w.(http.Flusher)
+
+	if h, ok := w.(http.Hijacker); ok {
+		hrw := &hijackerResponseWriter{ResponseWriter: rw, Hijacker: h}
+		if isFlusher {
+			hrw.Flusher = f
+		}
+		return hrw
+	}
+	if p, ok := w.(http.Pusher); ok {
+		prw := &pusherResponseWriter{ResponseWriter: rw, Pusher: p}
+		if isFlusher {
+			prw.Flusher = f
+		}
+		return prw
+	}
+	if isFlusher {
+		return &flusherResponseWriter{ResponseWriter: rw, Flusher: f}
+	}
+	return rw
 }
 
 // responseWriter implements the ResponseWriter interface.
@@ -96,23 +118,56 @@ func (w *responseWriter) Write(b []byte) (int, error) {
 	return n, err
 }
 
-// Implement http.Flusher and http.Hijacker.
+// Implement alternate interfaces.
 
-func (w *responseWriter) Flush() {
-	flusher, ok := w.ResponseWriter.(http.Flusher)
-	if !ok {
-		return
-	}
-	if !w.HasBeenWrittenTo() {
-		w.WriteHeader(http.StatusOK)
-	}
-	flusher.Flush()
+type flusherResponseWriter struct {
+	ResponseWriter
+	http.Flusher
 }
 
-func (w *responseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
-	hijacker, ok := w.ResponseWriter.(http.Hijacker)
-	if !ok {
-		return nil, nil, errors.New("the underlying ResponseWriter does not implement http.Hijacker")
+func (w *flusherResponseWriter) Flush() {
+	if wc, ok := w.ResponseWriter.(interface{ HasBeenWrittenTo() bool }); ok && !wc.HasBeenWrittenTo() {
+		w.WriteHeader(http.StatusOK)
 	}
-	return hijacker.Hijack()
+	w.Flusher.Flush()
+}
+
+type hijackerResponseWriter struct {
+	ResponseWriter
+	http.Hijacker
+	http.Flusher
+}
+
+func (w *hijackerResponseWriter) Flush() {
+	if w.Flusher == nil {
+		return
+	}
+	if wc, ok := w.ResponseWriter.(interface{ HasBeenWrittenTo() bool }); ok && !wc.HasBeenWrittenTo() {
+		w.WriteHeader(http.StatusOK)
+	}
+	w.Flusher.Flush()
+}
+
+func (w *hijackerResponseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	return w.Hijacker.Hijack()
+}
+
+type pusherResponseWriter struct {
+	ResponseWriter
+	http.Pusher
+	http.Flusher
+}
+
+func (w *pusherResponseWriter) Flush() {
+	if w.Flusher == nil {
+		return
+	}
+	if wc, ok := w.ResponseWriter.(interface{ HasBeenWrittenTo() bool }); ok && !wc.HasBeenWrittenTo() {
+		w.WriteHeader(http.StatusOK)
+	}
+	w.Flusher.Flush()
+}
+
+func (w *pusherResponseWriter) Push(target string, opts *http.PushOptions) error {
+	return w.Pusher.Push(target, opts)
 }
