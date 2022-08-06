@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/VerticalOps/fakesentry"
-	"github.com/getsentry/sentry-go"
 
 	"github.com/secureworks/logger/log"
 )
@@ -42,9 +41,9 @@ func NewConfigWithBuffer(t *testing.T, logLevel log.Level) (*log.Config, *bytes.
 
 // BindSentryClient attaches a Sentry server transport (from fake
 // Sentry) to the Sentry SDK's CurrentHub .It assumes that a logger has
-// been instantiated, which initializes the Sentry SDK.
-// Note this is data-race free but not race-condition free on the Sentry Hub.
-// Use with caution from multiple goroutines.
+// been instantiated, which initializes the Sentry SDK. Note: this is
+// data-race free but not race-condition free on the Sentry Hub. Use
+// with caution from multiple goroutines.
 func BindSentryClient(t *testing.T, tcp *http.Transport) {
 	t.Helper()
 
@@ -184,7 +183,8 @@ func AssertNotNil(t *testing.T, object interface{}) {
 	assertNility(t, object, false)
 }
 
-// AssertStringContains is a semantic test assertion for partial string matching.
+// AssertStringContains is a semantic test assertion for partial string
+// matching.
 func AssertStringContains(t *testing.T, expectedContained string, actualContaining string) {
 	t.Helper()
 	if !strings.Contains(actualContaining, expectedContained) {
@@ -194,6 +194,22 @@ func AssertStringContains(t *testing.T, expectedContained string, actualContaini
 			strings.Trim(actualContaining, "\n"),
 		)
 	}
+}
+
+// AssertNotPanics is a semantic test assertion that a function does not
+// panic.
+func AssertNotPanics(t *testing.T, fn func()) {
+	t.Helper()
+
+	didPanic := true
+	defer func() {
+		if didPanic {
+			t.Errorf("did panic")
+		}
+	}()
+
+	fn()
+	didPanic = false
 }
 
 // NOTE(PH): does not handle bytes well, update if we need to check
