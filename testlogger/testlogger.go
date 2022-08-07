@@ -27,14 +27,14 @@ func init() {
 	})
 }
 
-// New instantiates a new log.Logger that can be used for testing. This
-// can also be retrieved using "test" with log.Open and casting to the
-// type, eg:
+// New instantiates a new *testlogger.Logger that can be used for
+// testing. This can also be retrieved using "test" with log.Open and
+// casting to the type, eg:
 //
 //     l, _ := log.Open("test", nil)
-//     logger, _ := l.(testlogger.Logger)
+//     logger, _ := l.(*testlogger.Logger)
 //
-func New(config *log.Config, opts ...log.Option) (log.Logger, error) {
+func New(config *log.Config, opts ...log.Option) (*Logger, error) {
 	if config == nil {
 		// Env no-op ensures we don't have settings based on env.
 		config = log.DefaultConfig(func(string) string { return "" })
@@ -62,6 +62,16 @@ func New(config *log.Config, opts ...log.Option) (log.Logger, error) {
 	return logger, nil
 }
 
+// MustNew instantiates a new *testlogger.Logger that can be used for
+// testing. It will panic if there are any initialization errors.
+func MustNew(config *log.Config, opts ...log.Option) *Logger {
+	logger, err := New(config, opts...)
+	if err != nil {
+		panic(err)
+	}
+	return logger
+}
+
 // Logger implementation.
 
 // Logger is public so that we can cast the log.Logger interface to it
@@ -82,6 +92,8 @@ type Logger struct {
 	entries []*Entry
 
 	entriesMutex sync.Mutex
+
+	underlyingLoggerValue interface{}
 }
 
 var _ log.Logger = (*Logger)(nil)
@@ -144,7 +156,17 @@ func (l *Logger) WriteCloser(_ log.Level) io.WriteCloser { return l }
 // WriteCloser implementation.
 
 func (l *Logger) Write(p []byte) (int, error) { return l.WriteCloserBuffer.Write(p) }
-func (Logger) Close() error                   { return nil }
+func (l *Logger) Close() error                { return nil }
+
+// GetLogger will return the value set in SetLogger.
+func (l *Logger) GetLogger() interface{} {
+	return l.underlyingLoggerValue
+}
+
+// SetLogger will set the value that is retrieved in GetLogger.
+func (l *Logger) SetLogger(v interface{}) {
+	l.underlyingLoggerValue = v
+}
 
 // Entry implementation.
 
@@ -188,18 +210,6 @@ func (e *Entry) WithFields(fields map[string]interface{}) log.Entry {
 	}
 	return e
 }
-
-// func shrink(val interface{}) interface{} {
-// 	reflect.TypeOf(val).Kind() == reflect.Slice{}
-// 	// li := len(is)
-// 	// if e.notValid() || li == 0 {
-// 	// 	return e
-// 	// }
-
-// 	// if li == 1 {
-
-// 	return val
-// }
 
 func (e *Entry) Caller(vals ...int) log.Entry {
 	return e.WithField(log.CallerField, vals)
@@ -294,7 +304,8 @@ func (e *Entry) Msgf(format string, vals ...interface{}) {
 	e.Msg(fmt.Sprintf(format, vals...))
 }
 
-// Writes a JSON version of the fields with any message and the level.
+// Send writes a JSON version of the fields with any message and the
+// level.
 func (e *Entry) Send() {
 	fields := e.Fields
 	fields["level"] = StringFromLevel(e.Level)
