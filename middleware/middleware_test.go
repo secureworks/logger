@@ -1,7 +1,6 @@
 package middleware_test
 
 import (
-	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -77,45 +76,20 @@ func TestHTTPRequestLogAttributes(t *testing.T) {
 	req.Header.Set("X-Environment", env)
 
 	resp, logger := runMiddlewareAround(t, req,
-		&middleware.HTTPRequestLogAttributes{
-			Headers: []string{
-				"X-Request-Id",
-				"X-Trace-Id",
-				"X-Span-Id",
-				"X-Tenant-Ctx",
-				"X-Environment",
-				"X-Other", // Should fail.
-			},
-			Synthetics: map[string]func(*http.Request) string{
-				"req.uuid": func(r *http.Request) (val string) {
-					if reqID := r.Header.Get("X-Request-Id"); strings.Contains(reqID, ":") {
-						val = strings.Split(reqID, ":")[1]
-					}
-					return
-				},
-				// Should fail.
-				"req.other": func(r *http.Request) (val string) {
-					if reqID := r.Header.Get("X-Request-Id"); strings.Contains(reqID, "|") {
-						val = strings.Split(reqID, "|")[1]
-					}
-					return
-				},
-			},
-			SyntheticsResponse: map[string]func(w middleware.ResponseWriter) string{
-				"http.status_code": func(w middleware.ResponseWriter) string {
-					return fmt.Sprint(w.StatusCode())
-				},
-				"http.body_size": func(w middleware.ResponseWriter) string {
-					return fmt.Sprintf("%dB", w.BodySize())
-				},
-				// Should fail.
-				"res.other": func(w middleware.ResponseWriter) (val string) {
-					if resID := w.Header().Get("X-Response-Id"); resID != "" {
-						val = resID
-					}
-					return
-				},
-			},
+		func(r *http.Request, w middleware.ResponseWriter, e log.Entry, tm time.Time) {
+			middleware.DefaultLogFunc(r, w, e, tm) // Default headers.
+			middleware.AddHeader(e, "x-trace-id", r.Header)
+			middleware.AddHeader(e, "x-span-id", r.Header)
+			middleware.AddHeader(e, "x-tenant-ctx", r.Header)
+			middleware.AddHeader(e, "x-environment", r.Header)
+			middleware.AddHeader(e, "x-other", r.Header) // Should fail.
+
+			if reqID := r.Header.Get("x-request-id"); strings.Contains(reqID, ":") {
+				e.WithStr("req.uuid", strings.Split(reqID, ":")[1])
+			} // Should not fail.
+			if reqID := r.Header.Get("x-request-id"); strings.Contains(reqID, "|") {
+				e.WithStr("req.other", strings.Split(reqID, "|")[1])
+			} // Should fail.
 		},
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			_, _ = w.Write([]byte(`{"status":"OK"}`))
@@ -172,7 +146,7 @@ func TestHTTPRequestMiddlewarePanic(t *testing.T) {
 func runMiddlewareAround(
 	t *testing.T,
 	req *http.Request,
-	entries *middleware.HTTPRequestLogAttributes,
+	logFn middleware.LogFunc,
 	handler http.Handler,
 ) (*httptest.ResponseRecorder, *testlogger.Logger) {
 	t.Helper()
@@ -182,7 +156,7 @@ func runMiddlewareAround(
 	h := middleware.NewHTTPRequestMiddleware(
 		logger,
 		log.INFO,
-		entries,
+		logFn,
 	)(handler)
 	h.ServeHTTP(resp, req)
 

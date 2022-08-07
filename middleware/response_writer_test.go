@@ -178,7 +178,7 @@ func TestResponseWriter_Flush(t *testing.T) {
 		w := middleware.NewResponseWriter(&mockHijackerOnly{})
 		flusher, ok := w.(http.Flusher)
 		testutils.AssertTrue(t, ok)
-		assertNotPanics(t, func() { flusher.Flush() })
+		testutils.AssertNotPanics(t, func() { flusher.Flush() })
 	})
 
 	t.Run("when implemented, passes through to underlying response writer", func(t *testing.T) {
@@ -228,18 +228,4 @@ func TestResponseWriter_Pusher(t *testing.T) {
 		_ = pusher.Push("", nil) // TODO(PH): IDK, maybe should check these?
 		testutils.AssertTrue(t, mock.CalledPush)
 	})
-}
-
-func assertNotPanics(t *testing.T, fn func()) {
-	t.Helper()
-
-	didPanic := true
-	defer func() {
-		if didPanic {
-			t.Errorf("did panic")
-		}
-	}()
-
-	fn()
-	didPanic = false
 }

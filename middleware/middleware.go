@@ -80,21 +80,24 @@ func NewHTTPServer(logger log.Logger, srvLvl log.Level) (*http.Server, io.Closer
 	return srv, cl
 }
 
-// HTTPRequestLogAttributes allows us to inject two different ways
-// to automatically log aspects of a request: headers and synthetics.
-// Headers is a list of header names that will be set as fields in the
-// log if they are present in the request; synthetics are fields
-// generated from some combination or process applied to the request.
-//
-// If desired, the default attributes may also be skipped.
-type HTTPRequestLogAttributes struct {
-	Headers            []string
-	Synthetics         map[string]func(*http.Request) string
-	SyntheticsResponse map[string]func(ResponseWriter) string
-	SkipDuration       bool
-	SkipMethod         bool
-	SkipPath           bool
-	SkipRemoteAddr     bool
+// LogFunc ... FIXME
+type LogFunc func(*http.Request, ResponseWriter, log.Entry, time.Time)
+
+// DefaultLogFunc ... FIXME
+func DefaultLogFunc(r *http.Request, w ResponseWriter, e log.Entry, start time.Time) {
+	if value := r.Header.Get("x-request-id"); value != "" {
+		e.WithStr(log.ReqID, value)
+	}
+	e.WithStr(log.ReqMethod, r.Method)
+	path := r.RequestURI
+	if path == "" {
+		path = r.URL.Path
+	}
+	e.WithStr(log.ReqPath, path)
+	e.WithInt(log.ResStatusCode, w.StatusCode())
+	e.WithStr(log.ReqRemoteAddr, r.RemoteAddr)
+	e.WithStr(log.ReqDuration, time.Since(start).String())
+	e.WithInt("http.body_size", w.BodySize())
 }
 
 // NewHTTPRequestMiddleware returns net/http compatible middleware for
@@ -103,40 +106,17 @@ type HTTPRequestLogAttributes struct {
 // downstream handlers can use it. It will call entry.Send when done,
 // and capture panics. If lvl is invalid, the default level will be
 // used.
-func NewHTTPRequestMiddleware(logger log.Logger, lvl log.Level, attrs *HTTPRequestLogAttributes) func(http.Handler) http.Handler {
+func NewHTTPRequestMiddleware(logger log.Logger, lvl log.Level, logFn LogFunc) func(http.Handler) http.
+	Handler {
 	if !lvl.IsValid() {
 		lvl = log.INFO
 	}
+	if logFn == nil {
+		logFn = DefaultLogFunc
+	}
 
 	logEntry := func(w ResponseWriter, r *http.Request, entry log.Entry, start time.Time) {
-		if attrs == nil || attrs != nil && !attrs.SkipMethod {
-			entry.WithStr(log.ReqMethod, r.Method)
-		}
-		if attrs == nil || attrs != nil && !attrs.SkipPath {
-			path := r.RequestURI
-			if path == "" {
-				path = r.URL.Path
-			}
-			entry.WithStr(log.ReqPath, path)
-		}
-		if attrs == nil || attrs != nil && !attrs.SkipRemoteAddr {
-			entry.WithStr(log.ReqRemoteAddr, r.RemoteAddr)
-		}
-		if attrs == nil || attrs != nil && !attrs.SkipDuration {
-			entry.WithStr(log.ReqDuration, time.Since(start).String())
-		}
-		if attrs != nil {
-			for _, header := range attrs.Headers {
-				addIfPresent(header, r, entry)
-			}
-			for header, valueFn := range attrs.Synthetics {
-				addIfAvailable(header, valueFn(r), entry)
-			}
-			for header, valueFn := range attrs.SyntheticsResponse {
-				addIfAvailable(header, valueFn(w), entry)
-			}
-		}
-
+		logFn(r, w, entry, start)
 		if pv := recover(); pv != nil {
 			pve, ok := pv.(error)
 			if !ok {
@@ -173,14 +153,8 @@ func NewHTTPRequestMiddleware(logger log.Logger, lvl log.Level, attrs *HTTPReque
 	}
 }
 
-func addIfPresent(name string, r *http.Request, e log.Entry) {
-	if value := r.Header.Get(name); value != "" {
-		e.WithStr(strings.ToLower(name), value)
-	}
-}
-
-func addIfAvailable(name string, value string, e log.Entry) {
-	if name != "" && value != "" {
+func AddHeader(e log.Entry, name string, h http.Header) {
+	if value := h.Get(name); value != "" {
 		e.WithStr(strings.ToLower(name), value)
 	}
 }

@@ -134,23 +134,30 @@ const (
 
 	// ReqRemoteAddr is a key for Logger data concerning HTTP request
 	// logging.
-	ReqRemoteAddr = "http_remote_addr"
+	ReqRemoteAddr = "http.remote_addr"
+
+	// ReqID is a key for Logger data concerning HTTP request logging.
+	ReqID = "http.request_id"
+
+	// ResStatusCode is a key for Logger data concerning HTTP request
+	// logging.
+	ResStatusCode = "http.status_code"
 
 	// PanicStack is a key for Logger data concerning errors and stack
 	// traces.
-	PanicStack = "panic_stack"
+	PanicStack = "panic.stack"
 
 	// PanicValue is a key for Logger data concerning errors and stack
 	// traces.
-	PanicValue = "panic_value"
+	PanicValue = "panic.value"
 
 	// CallerField is a key for Logger data concerning errors and stack
 	// traces.
-	CallerField = "caller"
+	CallerField = "error.caller"
 
 	// StackField is a key for Logger data concerning errors and stack
 	// traces.
-	StackField = "stack"
+	StackField = "error.stack"
 )
 
 // Unified interface definitions.

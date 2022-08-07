@@ -8,3 +8,8 @@ require (
 	github.com/secureworks/logger/log v1.0.0
 	github.com/secureworks/logger/testlogger v1.0.0
 )
+
+replace (
+	github.com/secureworks/logger/log => ../log
+	github.com/secureworks/logger/internal => ../internal
+)
