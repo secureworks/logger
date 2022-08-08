@@ -26,4 +26,5 @@ jobs:
         with:
           go-version: ${{ matrix.go }}
       - name: run-tests
-        run: echo ${{ matrix.module }}
+        run: go test ./... -v -race -failfast -count 100
+        working-directory: ${{ matrix.module }}
