@@ -12,7 +12,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"os"
 	"strings"
 	"sync"
 	"time"
@@ -23,6 +22,9 @@ import (
 // Register logger.
 func init() {
 	log.Register("test", func(config *log.Config, opts ...log.Option) (log.Logger, error) {
+		return New(config, opts...)
+	})
+	log.Register("testlogger", func(config *log.Config, opts ...log.Option) (log.Logger, error) {
 		return New(config, opts...)
 	})
 }
@@ -48,11 +50,6 @@ func New(config *log.Config, opts ...log.Option) (*Logger, error) {
 		// multiple go routines can append to entries at the same time, so we will
 		// use this mutux to lock any access made to the entries field
 		entriesMutex: sync.Mutex{},
-	}
-
-	// Change default output, as long as os.Stdout (for examples) is not set.
-	if logger.Config.Output != os.Stdout {
-		logger.Config.Output = &bytes.Buffer{}
 	}
 
 	for _, opt := range opts {
@@ -103,10 +100,10 @@ type Logger struct {
 
 var _ log.Logger = (*Logger)(nil)
 
-// GetEntries can be used to the logs that have been posted up to the start of program or since
-// last call to GetEntries (which ever is most recent)
-// to call this method, you will need to cast the logger to testlogger.Logger
-func (l *Logger) GetEntries() []*Entry {
+// Entries can be used to get the logs that have been posted up to the
+// start of program or since the last call to Entries (which ever is
+// most recent).
+func (l *Logger) Entries() []*Entry {
 	l.entriesMutex.Lock()
 	defer l.entriesMutex.Unlock()
 	rtn := l.entries

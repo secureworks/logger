@@ -9,19 +9,17 @@ import (
 
 // Implements a Logrus hook (https://github.com/sirupsen/logrus#hooks)
 // to add a stack trace to the logging event.
-//
-// QUESTION(IB): Is this type necessary? There are tradeoffs doing it in
-// the event versus a hook.
 type errorHook struct{}
 
-// Run on all levels.
+// Levels returns on all Logrus levels (the levels this hook is
+// triggered on).
 func (errorHook) Levels() []logrus.Level {
 	return logrus.AllLevels
 }
 
-// If the event does not have a stack trace field and an error that
-// implements StackTracer, put the error's stack trace in the stack
-// trace field.
+// Fire runs the hook. If the event does not have a stack trace field
+// and an error that implements StackTracer, put the error's stack trace
+// in the stack trace field.
 func (errorHook) Fire(event *logrus.Entry) error {
 	if _, ok := event.Data[log.StackField]; ok {
 		return nil
