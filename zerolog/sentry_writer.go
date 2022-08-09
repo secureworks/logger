@@ -30,7 +30,10 @@ type sentryWriter struct {
 // Create a new Sentry writer attached to CurrentHub for the given set
 // of levels. This writer is a peer to Zerolog in the logger
 // implementation, skipping the Zerolog hook system entirely.
-func newSentryWriter(lvls ...log.Level) *sentryWriter {
+func newSentryWriter(hub *sentry.Hub, lvls ...log.Level) *sentryWriter {
+	if hub == nil {
+		hub = sentry.CurrentHub()
+	}
 	lvlSet := make(map[zerolog.Level]bool, len(lvls))
 	for _, lvl := range lvls {
 		lvlSet[lvlToZerolog(lvl)] = true
@@ -38,7 +41,7 @@ func newSentryWriter(lvls ...log.Level) *sentryWriter {
 
 	return &sentryWriter{
 		lvlField: []byte(fmt.Sprintf(`"%s"`, zerolog.LevelFieldName)),
-		hub:      sentry.CurrentHub(),
+		hub:      hub,
 		lvlSet:   lvlSet,
 	}
 }
