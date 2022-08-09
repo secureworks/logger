@@ -102,6 +102,8 @@ Sentry server message received:
 
 	// Receives a message from the channel and returns it or times out.
 	nextMessage := func(t *testing.T) []byte {
+		t.Helper()
+
 		var byt []byte
 
 		timer := time.NewTimer(time.Millisecond * 500)
