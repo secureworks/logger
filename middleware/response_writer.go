@@ -1,9 +1,7 @@
 package middleware
 
 import (
-	"bufio"
 	"fmt"
-	"net"
 	"net/http"
 )
 
@@ -149,10 +147,6 @@ func (w *hijackerResponseWriter) Flush() {
 	w.Flusher.Flush()
 }
 
-func (w *hijackerResponseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
-	return w.Hijacker.Hijack()
-}
-
 type pusherResponseWriter struct {
 	ResponseWriter
 	http.Pusher
@@ -167,8 +161,4 @@ func (w *pusherResponseWriter) Flush() {
 		w.WriteHeader(http.StatusOK)
 	}
 	w.Flusher.Flush()
-}
-
-func (w *pusherResponseWriter) Push(target string, opts *http.PushOptions) error {
-	return w.Pusher.Push(target, opts)
 }
