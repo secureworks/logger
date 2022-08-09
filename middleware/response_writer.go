@@ -125,10 +125,7 @@ type flusherResponseWriter struct {
 }
 
 func (w *flusherResponseWriter) Flush() {
-	if wc, ok := w.ResponseWriter.(interface{ HasBeenWrittenTo() bool }); ok && !wc.HasBeenWrittenTo() {
-		w.WriteHeader(http.StatusOK)
-	}
-	w.Flusher.Flush()
+	flush(w.Flusher, w.ResponseWriter)
 }
 
 type hijackerResponseWriter struct {
@@ -138,13 +135,7 @@ type hijackerResponseWriter struct {
 }
 
 func (w *hijackerResponseWriter) Flush() {
-	if w.Flusher == nil {
-		return
-	}
-	if wc, ok := w.ResponseWriter.(interface{ HasBeenWrittenTo() bool }); ok && !wc.HasBeenWrittenTo() {
-		w.WriteHeader(http.StatusOK)
-	}
-	w.Flusher.Flush()
+	flush(w.Flusher, w.ResponseWriter)
 }
 
 type pusherResponseWriter struct {
@@ -154,11 +145,15 @@ type pusherResponseWriter struct {
 }
 
 func (w *pusherResponseWriter) Flush() {
-	if w.Flusher == nil {
+	flush(w.Flusher, w.ResponseWriter)
+}
+
+func flush(flusher http.Flusher, w ResponseWriter) {
+	if flusher == nil {
 		return
 	}
-	if wc, ok := w.ResponseWriter.(interface{ HasBeenWrittenTo() bool }); ok && !wc.HasBeenWrittenTo() {
+	if wc, ok := w.(interface{ HasBeenWrittenTo() bool }); ok && !wc.HasBeenWrittenTo() {
 		w.WriteHeader(http.StatusOK)
 	}
-	w.Flusher.Flush()
+	flusher.Flush()
 }
