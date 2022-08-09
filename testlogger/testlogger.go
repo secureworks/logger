@@ -29,7 +29,7 @@ func init() {
 
 // New instantiates a new *testlogger.Logger that can be used for
 // testing. This can also be retrieved using "test" with log.Open and
-// casting to the type, eg:
+// asserting the type, eg:
 //
 //     l, _ := log.Open("test", nil)
 //     logger, _ := l.(*testlogger.Logger)

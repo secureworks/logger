@@ -307,9 +307,6 @@ type Entry interface {
 //
 // NOTE(IB): this is currently required for CustomOptions to work.
 type UnderlyingLogger interface {
-	// GetLogger will return the specific logging driver for the log.Logger.
 	GetLogger() interface{}
-
-	// SetLogger will set the specific logging driver for the log.Logger.
 	SetLogger(interface{})
 }
