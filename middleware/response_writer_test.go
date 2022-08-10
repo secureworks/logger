@@ -129,7 +129,7 @@ func TestResponseWriter_StatusCode(t *testing.T) {
 
 	t.Run("written too when writing", func(t *testing.T) {
 		w := middleware.NewResponseWriter(&mockRW{Buffer: new(bytes.Buffer)})
-		w.Write([]byte(`{"example":true}`))
+		_, _ = w.Write([]byte(`{"example":true}`))
 		testutils.AssertEqual(t, 200, w.StatusCode())
 	})
 }
@@ -148,7 +148,7 @@ func TestResponseWriter_Status(t *testing.T) {
 
 	t.Run("written too when writing", func(t *testing.T) {
 		w := middleware.NewResponseWriter(&mockRW{Buffer: new(bytes.Buffer)})
-		w.Write([]byte(`{"example":true}`))
+		_, _ = w.Write([]byte(`{"example":true}`))
 		testutils.AssertEqual(t, "200 OK", w.Status())
 	})
 }
@@ -161,8 +161,8 @@ func TestResponseWriter_BodySize(t *testing.T) {
 
 	t.Run("written too when writing", func(t *testing.T) {
 		w := middleware.NewResponseWriter(&mockRW{Buffer: new(bytes.Buffer)})
-		w.Write([]byte(`{"example":`))
-		w.Write([]byte(`true}`))
+		_, _ = w.Write([]byte(`{"example":`))
+		_, _ = w.Write([]byte(`true}`))
 		testutils.AssertEqual(t, 16, w.BodySize())
 	})
 }

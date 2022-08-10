@@ -118,7 +118,7 @@ func TestHTTPRequestLogAttributes(t *testing.T) {
 			},
 		},
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Write([]byte(`{"status":"OK"}`))
+			_, _ = w.Write([]byte(`{"status":"OK"}`))
 		}),
 	)
 	testutils.AssertEqual(t, http.StatusOK, resp.Code)

@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/VerticalOps/fakesentry"
+	"github.com/getsentry/sentry-go"
 
 	"github.com/secureworks/logger/log"
 )
