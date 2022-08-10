@@ -9,6 +9,15 @@ import (
 	"strings"
 )
 
+// FIXME(PH): must implement:
+//   1. Message field is "message" (not "msg" as in Zerolog default): the
+//      value is a reserved attribute for DD. Should be overridable by
+//      options.
+//   2. Must be a way to set "source" and "service" at the very least on
+//      the logger (specific fields).
+//   3. Must be a way to turn on the field:
+//      {"logger.version:" "github.com/secureworks/logger/log/v2"}
+
 // These EnvKeys describe environmental variables used to set Config
 // variables.
 const (
