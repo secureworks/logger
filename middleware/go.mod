@@ -9,6 +9,7 @@ require (
 	github.com/secureworks/logger/testlogger v1.0.0
 )
 
+// FIXME(PH): remove before v2 released.
 replace (
 	github.com/secureworks/logger/log => ../log
 	github.com/secureworks/logger/internal => ../internal

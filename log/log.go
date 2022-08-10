@@ -122,42 +122,62 @@ func (l LoggerFormat) IsValid() bool {
 // regularizing them we can make better assumptions about where to find
 // and extract them.
 const (
-	// ReqDuration is a key for Logger data concerning HTTP request
-	// logging.
+	// ReqDuration is a standard field name for commonly logged data that
+	// can help logs to be more readable. It is marks the duration of some
+	// task. It is a DataDog default standard attribute.
 	ReqDuration = "duration"
 
-	// ReqPath is a key for Logger data concerning HTTP request logging.
+	// ReqPath is a standard field name for commonly logged data that can
+	// help logs to be more readable. It marks the path of the request that
+	// is being logged. It is a DataDog default standard attribute.
 	ReqPath = "http.url_details.path"
 
-	// ReqMethod is a key for Logger data concerning HTTP request logging.
+	// ReqMethod is a standard field name for commonly logged data that can
+	// help logs to be more readable. It marks the method of the request
+	// that is being logged. It is a DataDog default standard attribute.
 	ReqMethod = "http.method"
 
-	// ReqRemoteAddr is a key for Logger data concerning HTTP request
-	// logging.
+	// ReqRemoteAddr is a standard field name for commonly logged data that
+	// can help logs to be more readable. It marks the IP address of the
+	// client that made the request that is being logged.
 	ReqRemoteAddr = "http.remote_addr"
 
-	// ReqID is a key for Logger data concerning HTTP request logging.
+	// ReqID is a standard field name for commonly logged data that can help
+	// logs to be more readable. It marks the unique ID of the request that
+	// is being logged. It is a DataDog default standard attribute.
 	ReqID = "http.request_id"
 
-	// ResStatusCode is a key for Logger data concerning HTTP request
-	// logging.
+	// ResStatusCode is a standard field name for commonly logged data that
+	// can help logs to be more readable. It marks the status of the
+	// response the server has generated for the request that is being
+	// logged. It is a DataDog default standard attribute.
 	ResStatusCode = "http.status_code"
 
-	// PanicStack is a key for Logger data concerning errors and stack
-	// traces.
-	PanicStack = "panic.stack"
+	// StackField is a standard field name for commonly logged data that can
+	// help logs to be more readable. It marks the error stack trace for the
+	// error that is being logged. It is a DataDog default standard
+	// attribute.
+	StackField = "error.stack"
 
-	// PanicValue is a key for Logger data concerning errors and stack
-	// traces.
+	// PanicValue is a standard field name for commonly logged data that can
+	// help logs to be more readable. It marks the message for the panic
+	// that is being logged.
 	PanicValue = "panic.value"
 
-	// CallerField is a key for Logger data concerning errors and stack
-	// traces.
-	CallerField = "error.caller"
+	// PanicStack is a standard field name for commonly logged data that can
+	// help logs to be more readable. It marks the stack trace for the panic
+	// that is being logged.
+	PanicStack = "panic.stack"
 
-	// StackField is a key for Logger data concerning errors and stack
-	// traces.
-	StackField = "error.stack"
+	// CallerField is a standard field name for commonly logged data that
+	// can help logs to be more readable. It marks when the logger
+	// attaches a specific stack frame to the log.
+	CallerField = "caller"
+
+	// LoggerVersionField is a standard field name for commonly logged data
+	// that can help logs to be more readable. It marks the current logger
+	// version.
+	LoggerVersionField = "logger.version"
 )
 
 // Unified interface definitions.
