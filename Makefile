@@ -1,4 +1,5 @@
-PACKAGES = $(shell go list ./...)
+
+MODULES := $(shell find . -type f -name go.mod -print0 | xargs -0 dirname)
 
 .DEFAULT_GOAL := help
 .PHONY: help lint test
@@ -6,11 +7,11 @@ PACKAGES = $(shell go list ./...)
 help:
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-10s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
-lint: ## Run go vet and golangci-lint.
-	go vet ./... || go clean ./...; go vet ./... && golangci-lint run ./...
+lint: $(patsubst %,%.lint,$(MODULES)) ## Runs go vet and golangci-lint.
+test: $(patsubst %,%.test,$(MODULES)) ## Run tests.
 
-test: ## Run tests.
-	go test -short -v ./... -race;
-	cd middleware && go test -short -v ./... -race;
-	cd logrus && go test -short -v ./... -race;
-	cd zerolog && go test -short -v ./... -race;
+%.lint:
+	cd $* && go vet ./... && golangci-lint run ;
+
+%.test:
+	cd $* && go test -short -v ./... -race;

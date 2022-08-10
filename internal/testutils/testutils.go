@@ -102,6 +102,8 @@ Sentry server message received:
 
 	// Receives a message from the channel and returns it or times out.
 	nextMessage := func(t *testing.T) []byte {
+		t.Helper()
+
 		var byt []byte
 
 		timer := time.NewTimer(time.Millisecond * 500)
@@ -120,7 +122,7 @@ Sentry server message received:
 // AssertTrue is a semantic test assertion for object truthiness.
 func AssertTrue(t *testing.T, object bool) {
 	t.Helper()
-	if object != true {
+	if !object {
 		t.Errorf("is not true")
 	}
 }
@@ -128,7 +130,7 @@ func AssertTrue(t *testing.T, object bool) {
 // AssertFalse is a semantic test assertion for object truthiness.
 func AssertFalse(t *testing.T, object bool) {
 	t.Helper()
-	if object == true {
+	if object {
 		t.Errorf("is not false")
 	}
 }

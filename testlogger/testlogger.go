@@ -321,7 +321,7 @@ func (e *Entry) Send() {
 	byt, err := json.Marshal(fields)
 	if err == nil {
 		e.Logger.entriesMutex.Lock()
-		e.Logger.Config.Output.Write(byt)
+		_, _ = e.Logger.Config.Output.Write(byt)
 		e.Logger.entriesMutex.Unlock()
 		e.Sent = true
 	}
