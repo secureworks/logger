@@ -64,7 +64,7 @@ func newLogger(config *log.Config, opts ...log.Option) (log.Logger, error) {
 		}
 		output = io.MultiWriter(
 			output,
-			newSentryWriter(config.Sentry.Levels...),
+			newSentryWriter(nil, config.Sentry.Levels...),
 		)
 	}
 

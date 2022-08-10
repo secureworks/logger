@@ -1,0 +1,30 @@
+name: run-tests
+
+on: [pull_request]
+
+jobs:
+  resolve-modules:
+    name: resolve modules
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v3
+      - id: set-matrix
+        run: ./.github/tools/resolve-modules.sh
+  test:
+    name: test
+    needs: resolve-modules
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go: [ '1.16', '1.17', '1.18', '1.19' ]
+        module: ${{ fromJson(needs.resolve-modules.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
+        with:
+          go-version: ${{ matrix.go }}
+      - name: run-tests
+        run: go test ./... -v -race -failfast -count 100
+        working-directory: ${{ matrix.module }}
