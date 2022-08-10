@@ -1,6 +1,7 @@
 package middleware_test
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -100,9 +101,24 @@ func TestHTTPRequestLogAttributes(t *testing.T) {
 					return
 				},
 			},
+			SyntheticsResponse: map[string]func(w middleware.ResponseWriter) string{
+				"http.status_code": func(w middleware.ResponseWriter) string {
+					return fmt.Sprint(w.StatusCode())
+				},
+				"http.body_size": func(w middleware.ResponseWriter) string {
+					return fmt.Sprintf("%dB", w.BodySize())
+				},
+				// Should fail.
+				"res.other": func(w middleware.ResponseWriter) (val string) {
+					if resID := w.Header().Get("X-Response-Id"); resID != "" {
+						val = resID
+					}
+					return
+				},
+			},
 		},
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{"status":"OK"}`))
 		}),
 	)
 	testutils.AssertEqual(t, http.StatusOK, resp.Code)
@@ -115,9 +131,12 @@ func TestHTTPRequestLogAttributes(t *testing.T) {
 	testutils.AssertEqual(t, cID, entry.StringField("x-tenant-ctx"))
 	testutils.AssertEqual(t, env, entry.StringField("x-environment"))
 	testutils.AssertEqual(t, uID, entry.StringField("req.uuid"))
+	testutils.AssertEqual(t, "200", entry.StringField("http.status_code"))
+	testutils.AssertEqual(t, "15B", entry.StringField("http.body_size"))
 
 	testutils.AssertFalse(t, entry.HasField("x-other"))
 	testutils.AssertFalse(t, entry.HasField("req.other"))
+	testutils.AssertFalse(t, entry.HasField("res.other"))
 }
 
 func TestHTTPRequestMiddlewarePanic(t *testing.T) {
