@@ -134,8 +134,8 @@ github.com/schollz/closestmatch v2.1.0+incompatible/go.mod h1:RtP1ddjLong6gTkbtm
 github.com/secureworks/logger/internal v1.0.0 h1:9oYTgCj6dmwEAUj6HQ8C+s5oa0QvlQuqVqF44P/Uku8=
 github.com/secureworks/logger/internal v1.0.0/go.mod h1:+bMQ3BydH8iPXKUL1vmyhRC4BVY5Ki36SDOXAvs7SEY=
 github.com/secureworks/logger/log v0.0.0-20220205044137-87fc114ad3f5/go.mod h1:joi16d/v8AfHARO8wsU8o2IDC1zex9gOWjBC+HjXF54=
-github.com/secureworks/logger/log v1.0.0 h1:xk+oUxmExXqu4ifcBRvAO8FZ6+cxSVuO5Ma2dqVQxFU=
-github.com/secureworks/logger/log v1.0.0/go.mod h1:joi16d/v8AfHARO8wsU8o2IDC1zex9gOWjBC+HjXF54=
+github.com/secureworks/logger/log v1.1.0 h1:rfBnBswSGHLtyO3qNv66tnUPjekzJ6LEuV+PTFasofo=
+github.com/secureworks/logger/log v1.1.0/go.mod h1:joi16d/v8AfHARO8wsU8o2IDC1zex9gOWjBC+HjXF54=
 github.com/secureworks/logger/testlogger v1.0.0 h1:RnCoqNZ74JkiADJBm0rOOUVx96BNXdFFGathmMglhPI=
 github.com/secureworks/logger/testlogger v1.0.0/go.mod h1:/nSs1LnTnel2MIdhXS+iPQgg9rZYGJTkSbcUALnzC5w=
 github.com/sergi/go-diff v1.0.0/go.mod h1:0CfEIISq7TuYL3j771MWULgwwjU+GofnZX9QAmXWZgo=

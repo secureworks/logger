@@ -15,3 +15,12 @@ test: $(patsubst %,%.test,$(MODULES)) ## Run tests.
 
 %.test:
 	cd $* && go test -short -v ./... -race;
+
+tidy:
+	cd log && go mod tidy;
+	cd internal && go mod tidy;
+	cd testlogger && go mod tidy;
+	cd middleware && go mod tidy;
+	cd logrus && go mod tidy;
+	cd zerolog && go mod tidy;
+	go mod tidy
