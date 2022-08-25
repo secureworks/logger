@@ -46,8 +46,9 @@ func TestHTTPRequestMiddleware(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 	}))
 	testutils.AssertEqual(t, http.StatusOK, resp.Code)
-	testutils.AssertEqual(t, 1, len(logger.Entries))
-	entry := logger.Entries[0]
+	entries := logger.GetEntries()
+	testutils.AssertEqual(t, 1, len(entries))
+	entry := entries[0]
 
 	testutils.AssertTrue(t, entry.IsAsync)
 	testutils.AssertTrue(t, entry.Sent)
@@ -122,8 +123,9 @@ func TestHTTPRequestLogAttributes(t *testing.T) {
 		}),
 	)
 	testutils.AssertEqual(t, http.StatusOK, resp.Code)
-	testutils.AssertEqual(t, 1, len(logger.Entries))
-	entry := logger.Entries[0]
+	entries := logger.GetEntries()
+	testutils.AssertEqual(t, 1, len(entries))
+	entry := entries[0]
 
 	testutils.AssertEqual(t, rID, entry.StringField("x-request-id"))
 	testutils.AssertEqual(t, tID, entry.StringField("x-trace-id"))
@@ -145,8 +147,9 @@ func TestHTTPRequestMiddlewarePanic(t *testing.T) {
 		panic("this is fine")
 	}))
 	testutils.AssertEqual(t, http.StatusInternalServerError, res.Code)
-	testutils.AssertEqual(t, 1, len(logger.Entries))
-	entry := logger.Entries[0]
+	entries := logger.GetEntries()
+	testutils.AssertEqual(t, 1, len(entries))
+	entry := entries[0]
 
 	testutils.AssertTrue(t, entry.IsAsync)
 	testutils.AssertTrue(t, entry.Sent)
@@ -186,5 +189,5 @@ func runMiddlewareAround(
 	)(handler)
 	h.ServeHTTP(resp, req)
 
-	return resp, logger.(*testlogger.Logger)
+	return resp, logger
 }

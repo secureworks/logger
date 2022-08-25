@@ -34,9 +34,10 @@ func Example_usingTestlogger() {
 		fmt.Println(tl.Config.Output.(*bytes.Buffer).String())
 
 		// You can also access specific entries and use utility helpers.
-		fmt.Println(tl.Entries[0].Message)
-		fmt.Println(tl.Entries[0].Fields["error"])
-		fmt.Println(tl.Entries[0].StringField("tfield"))
+		entry := tl.GetEntries()[0]
+		fmt.Println(entry.Message)
+		fmt.Println(entry.Fields["error"])
+		fmt.Println(entry.StringField("tfield"))
 	}
 
 	// Output: {"error":"error message","level":"INFO","message":"test message","tfield":"test-value"}
