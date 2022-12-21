@@ -91,8 +91,9 @@ func newLogger(config *log.Config, opts ...log.Option) (log.Logger, error) {
 // Logger implementation.
 
 type logger struct {
-	lg       *logrus.Logger
-	errStack bool
+	lg              *logrus.Logger
+	errStack        bool
+	reusableEntries bool
 }
 
 var _ log.Logger = (*logger)(nil)
@@ -155,6 +156,7 @@ func (l *logger) newEntry(lvl logrus.Level) *entry {
 	return &entry{
 		ent:      logrus.NewEntry(l.lg),
 		errStack: l.errStack,
+		reuse:    l.reusableEntries,
 		lvl:      lvl,
 	}
 }
@@ -188,6 +190,7 @@ type entry struct {
 	lvl      logrus.Level
 	async    bool
 	errStack bool
+	reuse    bool
 	msg      string
 }
 
@@ -200,7 +203,7 @@ func (e *entry) Async() log.Entry {
 }
 
 func (e *entry) Caller(skip ...int) log.Entry {
-	if e == nil {
+	if e.notValid() {
 		return e
 	}
 
@@ -223,7 +226,7 @@ func (e *entry) Caller(skip ...int) log.Entry {
 }
 
 func (e *entry) WithError(errs ...error) log.Entry {
-	if len(errs) == 0 || e == nil {
+	if len(errs) == 0 || e.notValid() {
 		return e
 	}
 
@@ -253,7 +256,7 @@ func (e *entry) WithFields(fields map[string]interface{}) log.Entry {
 }
 
 func (e *entry) WithBool(key string, bls ...bool) log.Entry {
-	if e == nil || len(bls) == 0 {
+	if e.notValid() || len(bls) == 0 {
 		return e
 	}
 
@@ -265,7 +268,7 @@ func (e *entry) WithBool(key string, bls ...bool) log.Entry {
 }
 
 func (e *entry) WithDur(key string, durs ...time.Duration) log.Entry {
-	if e == nil || len(durs) == 0 {
+	if e.notValid() || len(durs) == 0 {
 		return e
 	}
 
@@ -277,7 +280,7 @@ func (e *entry) WithDur(key string, durs ...time.Duration) log.Entry {
 }
 
 func (e *entry) WithInt(key string, is ...int) log.Entry {
-	if e == nil || len(is) == 0 {
+	if e.notValid() || len(is) == 0 {
 		return e
 	}
 
@@ -289,7 +292,7 @@ func (e *entry) WithInt(key string, is ...int) log.Entry {
 }
 
 func (e *entry) WithUint(key string, us ...uint) log.Entry {
-	if e == nil || len(us) == 0 {
+	if e.notValid() || len(us) == 0 {
 		return e
 	}
 
@@ -301,7 +304,7 @@ func (e *entry) WithUint(key string, us ...uint) log.Entry {
 }
 
 func (e *entry) WithStr(key string, strs ...string) log.Entry {
-	if e == nil || len(strs) == 0 {
+	if e.notValid() || len(strs) == 0 {
 		return e
 	}
 
@@ -314,7 +317,7 @@ func (e *entry) WithStr(key string, strs ...string) log.Entry {
 }
 
 func (e *entry) WithTime(key string, ts ...time.Time) log.Entry {
-	if e == nil || len(ts) == 0 {
+	if e.notValid() || len(ts) == 0 {
 		return e
 	}
 
@@ -328,19 +331,30 @@ func (e *entry) WithTime(key string, ts ...time.Time) log.Entry {
 	return e.WithField(key, i)
 }
 
-func (e *entry) Trace() log.Entry { e.lvl = logrus.TraceLevel; return e }
-func (e *entry) Debug() log.Entry { e.lvl = logrus.DebugLevel; return e }
-func (e *entry) Info() log.Entry  { e.lvl = logrus.InfoLevel; return e }
-func (e *entry) Warn() log.Entry  { e.lvl = logrus.WarnLevel; return e }
-func (e *entry) Error() log.Entry { e.lvl = logrus.ErrorLevel; return e }
-func (e *entry) Panic() log.Entry { e.lvl = logrus.PanicLevel; return e }
-func (e *entry) Fatal() log.Entry { e.lvl = logrus.FatalLevel; return e }
+func (e *entry) Trace() log.Entry { return e.setLevel(logrus.TraceLevel) }
+func (e *entry) Debug() log.Entry { return e.setLevel(logrus.DebugLevel) }
+func (e *entry) Info() log.Entry  { return e.setLevel(logrus.InfoLevel) }
+func (e *entry) Warn() log.Entry  { return e.setLevel(logrus.WarnLevel) }
+func (e *entry) Error() log.Entry { return e.setLevel(logrus.ErrorLevel) }
+func (e *entry) Panic() log.Entry { return e.setLevel(logrus.PanicLevel) }
+func (e *entry) Fatal() log.Entry { return e.setLevel(logrus.FatalLevel) }
+
+func (e *entry) setLevel(lg logrus.Level) log.Entry {
+	if !e.notValid() {
+		e.lvl = lg
+	}
+	return e
+}
 
 func (e *entry) Msgf(format string, vals ...interface{}) {
 	e.Msg(fmt.Sprintf(format, vals...))
 }
 
 func (e *entry) Msg(msg string) {
+	if e.notValid() {
+		return
+	}
+
 	e.msg = msg
 
 	if !e.async {
@@ -349,11 +363,16 @@ func (e *entry) Msg(msg string) {
 }
 
 func (e *entry) Send() {
-	if e == nil || e.ent == nil {
+	if e.notValid() {
 		return
 	}
 
-	defer releaseEntry(e.ent.Logger, e.ent)
+	if !e.reuse {
+		defer func() {
+			releaseEntry(e.ent.Logger, e.ent)
+			e.ent = nil
+		}()
+	}
 
 	switch e.lvl {
 	case logrus.PanicLevel:
@@ -364,7 +383,11 @@ func (e *entry) Send() {
 		e.ent.Log(e.lvl, e.msg)
 	}
 
-	e.ent = nil
+	e.msg = ""
+}
+
+func (e *entry) notValid() bool {
+	return e == nil || e.ent == nil
 }
 
 // UnderlyingLogger implementation.
