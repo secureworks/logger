@@ -27,7 +27,10 @@ type noopLogger struct{}
 
 var _ Logger = (*noopLogger)(nil)
 
-func (noopLogger) IsLevelEnabled(lvl Level) bool     { return false }
+func (noopLogger) LogLevel() Level { return INFO }
+
+func (noopLogger) Print(_ ...any)                    {}
+func (noopLogger) Printf(_ string, _ ...any)         {}
 func (noopLogger) WithError(_ error) Entry           { return noopEntry{} }
 func (noopLogger) WithField(_ string, _ any) Entry   { return noopEntry{} }
 func (noopLogger) WithFields(_ map[string]any) Entry { return noopEntry{} }
@@ -54,9 +57,9 @@ type noopEntry struct{}
 
 var _ Entry = (*noopEntry)(nil)
 
-func (n noopEntry) Async() Entry          { return n }
-func (n noopEntry) Caller(_ ...int) Entry { return n }
-
+func (n noopEntry) Async() Entry                               { return n }
+func (n noopEntry) IsLevelEnabled(level Level) bool            { return level >= INFO }
+func (n noopEntry) Caller(_ ...int) Entry                      { return n }
 func (n noopEntry) WithError(_ ...error) Entry                 { return n }
 func (n noopEntry) WithField(_ string, _ any) Entry            { return n }
 func (n noopEntry) WithFields(_ map[string]any) Entry          { return n }
@@ -76,5 +79,5 @@ func (n noopEntry) Panic() Entry { return n }
 func (n noopEntry) Fatal() Entry { return n }
 
 func (noopEntry) Msgf(_ string, _ ...any) {}
-func (noopEntry) Msg(_ string)            {}
+func (noopEntry) Msg(_ any)               {}
 func (noopEntry) Send()                   {}

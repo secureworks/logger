@@ -9,11 +9,10 @@ type Logger interface {
 	// TODO(PH)
 	LogLevel() Level
 
-	// WriteCloser returns an io.Writer that when written to writes logs
+	// WriteCloser returns an io.Writer that, when written to, writes logs
 	// at the given level. It is the callers responsibility to call Close
-	// when finished. This is particularly useful for redirecting the
-	// output of other loggers or even Readers with the help of
-	// io.TeeReader.
+	// when finished. This is particularly useful for redirecting the output
+	// of other loggers or even Readers with the help of io.TeeReader.
 	WriteCloser(Level) io.WriteCloser
 
 	StandardLogger

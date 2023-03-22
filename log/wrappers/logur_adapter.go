@@ -1,18 +1,20 @@
-package log
+package wrappers
 
 import (
 	"context"
 	"errors"
+
+	"github.com/secureworks/logger/log"
 )
 
 // LogurAdapter is a Logur adapter for Logger.
 type LogurAdapter struct {
-	logger Logger
+	logger log.Logger
 }
 
 // NewLogurAdapter returns a new Logur logger. The given Logger may not
 // be nil.
-func NewLogurAdapter(logger Logger) (*LogurAdapter, error) {
+func NewLogurAdapter(logger log.Logger) (*LogurAdapter, error) {
 	if logger == nil {
 		return nil, errors.New("TODO(PH)")
 	}
@@ -20,10 +22,10 @@ func NewLogurAdapter(logger Logger) (*LogurAdapter, error) {
 }
 
 func (l *LogurAdapter) Trace(msg string, fields ...map[string]any) {
-	if l.logger.LogLevel() < TRACE {
+	if l.logger.LogLevel() < log.TRACE {
 		return
 	}
-	entry := l.logger.Entry(TRACE)
+	entry := l.logger.Entry(log.TRACE)
 	if len(fields) > 0 {
 		entry = entry.WithFields(fields[0])
 	}
@@ -31,10 +33,10 @@ func (l *LogurAdapter) Trace(msg string, fields ...map[string]any) {
 }
 
 func (l *LogurAdapter) Debug(msg string, fields ...map[string]any) {
-	if l.logger.LogLevel() < DEBUG {
+	if l.logger.LogLevel() < log.DEBUG {
 		return
 	}
-	entry := l.logger.Entry(DEBUG)
+	entry := l.logger.Entry(log.DEBUG)
 	if len(fields) > 0 {
 		entry = entry.WithFields(fields[0])
 	}
@@ -42,10 +44,10 @@ func (l *LogurAdapter) Debug(msg string, fields ...map[string]any) {
 }
 
 func (l *LogurAdapter) Info(msg string, fields ...map[string]any) {
-	if l.logger.LogLevel() < INFO {
+	if l.logger.LogLevel() < log.INFO {
 		return
 	}
-	entry := l.logger.Entry(INFO)
+	entry := l.logger.Entry(log.INFO)
 	if len(fields) > 0 {
 		entry = entry.WithFields(fields[0])
 	}
@@ -53,10 +55,10 @@ func (l *LogurAdapter) Info(msg string, fields ...map[string]any) {
 }
 
 func (l *LogurAdapter) Warn(msg string, fields ...map[string]any) {
-	if l.logger.LogLevel() < WARN {
+	if l.logger.LogLevel() < log.WARN {
 		return
 	}
-	entry := l.logger.Entry(WARN)
+	entry := l.logger.Entry(log.WARN)
 	if len(fields) > 0 {
 		entry = entry.WithFields(fields[0])
 	}
@@ -64,10 +66,10 @@ func (l *LogurAdapter) Warn(msg string, fields ...map[string]any) {
 }
 
 func (l *LogurAdapter) Error(msg string, fields ...map[string]any) {
-	if l.logger.LogLevel() < ERROR {
+	if l.logger.LogLevel() < log.ERROR {
 		return
 	}
-	entry := l.logger.Entry(ERROR)
+	entry := l.logger.Entry(log.ERROR)
 	if len(fields) > 0 {
 		entry = entry.WithFields(fields[0])
 	}

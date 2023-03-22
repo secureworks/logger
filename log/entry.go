@@ -35,12 +35,12 @@ type Entry interface {
 	// on the Entry to build a stack or execution trace.
 	Caller(skip ...int) Entry
 
-	// WithErrors attaches the given errors into a new Entry and returns the
+	// WithError attaches the given errors into a new Entry and returns the
 	// Entry. Depending on the logger implementation, multiple errors may be
 	// inserted as a slice of errors or a single multi-error. Calling the
 	// method more than once will overwrite the attached error(s) and not
 	// append them.
-	WithErrors(errs ...error) Entry
+	WithError(errs ...error) Entry
 
 	// WithField inserts the key and value into the Entry (as tags or
 	// metadata information) and returns the Entry.

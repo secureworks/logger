@@ -1,4 +1,4 @@
-module github.com/secureworks/logger/internal
+module github.com/secureworks/logger/drivers/testlogger
 
 go 1.19
 
