@@ -4,7 +4,6 @@
 //
 // Test loggers can be used for simple testing and mocking in an obvious
 // way.
-//
 package testlogger
 
 import (
@@ -31,13 +30,12 @@ func init() {
 // testing. This can also be retrieved using "test" with log.Open and
 // asserting the type, eg:
 //
-//     l, _ := log.Open("test", nil)
-//     logger, _ := l.(*testlogger.Logger)
-//
+//	l, _ := log.Open("test", nil)
+//	logger, _ := l.(*testlogger.Logger)
 func New(config *log.Config, opts ...log.Option) (*Logger, error) {
 	if config == nil {
 		// Env no-op ensures we don't have settings based on env.
-		config = log.DefaultConfig(func(string) string { return "" })
+		config = log.DefaultConfigWithEnvLookup(func(string) string { return "" })
 	}
 
 	logger := &Logger{
@@ -118,6 +116,18 @@ func (l *Logger) IsLevelEnabled(lvl log.Level) bool {
 	return lvl >= l.Config.Level
 }
 
+func (l *Logger) LogLevel() log.Level {
+	return l.Config.Level
+}
+
+func (l *Logger) Print(v ...any) {
+	l.Entry(l.Config.Level).Msg(v)
+}
+
+func (l *Logger) Printf(format string, v ...any) {
+	l.Entry(l.Config.Level).Msgf(format, v)
+}
+
 func (l *Logger) Entry(lvl log.Level) log.Entry {
 	entry := &Entry{
 		Logger: l,
@@ -136,7 +146,6 @@ func (l *Logger) Info() log.Entry  { return l.Entry(log.INFO) }
 func (l *Logger) Warn() log.Entry  { return l.Entry(log.WARN) }
 func (l *Logger) Error() log.Entry { return l.Entry(log.ERROR) }
 func (l *Logger) Panic() log.Entry { return l.Entry(log.PANIC) }
-func (l *Logger) Fatal() log.Entry { return l.Entry(log.FATAL) }
 
 func (l *Logger) WithError(err error) log.Entry {
 	return l.Entry(l.Config.Level).WithError(err)
@@ -203,6 +212,10 @@ type Entry struct {
 var _ log.Entry = (*Entry)(nil)
 
 func (e *Entry) Async() log.Entry { e.IsAsync = !e.IsAsync; return e }
+
+func (e *Entry) IsLevelEnabled(lvl log.Level) bool {
+	return e.Logger.IsLevelEnabled(lvl)
+}
 
 func (e *Entry) WithField(k string, val interface{}) log.Entry {
 	e.Fields[k] = val
@@ -296,17 +309,16 @@ func (e *Entry) Info() log.Entry  { e.Level = log.INFO; return e }
 func (e *Entry) Warn() log.Entry  { e.Level = log.WARN; return e }
 func (e *Entry) Error() log.Entry { e.Level = log.ERROR; return e }
 func (e *Entry) Panic() log.Entry { e.Level = log.PANIC; return e }
-func (e *Entry) Fatal() log.Entry { e.Level = log.FATAL; return e }
 
-func (e *Entry) Msg(msg string) {
-	e.Message = msg
+func (e *Entry) Msg(v any) {
+	e.Message = fmt.Sprintf("%v", v)
 	if !e.IsAsync {
 		e.Send()
 	}
 }
 
-func (e *Entry) Msgf(format string, vals ...interface{}) {
-	e.Msg(fmt.Sprintf(format, vals...))
+func (e *Entry) Msgf(format string, v ...interface{}) {
+	e.Msg(fmt.Sprintf(format, v...))
 }
 
 // Send writes a JSON version of the fields with any message and the
@@ -327,8 +339,6 @@ func (e *Entry) Send() {
 	}
 
 	switch e.Level {
-	case log.FATAL:
-		e.Logger.ExitFn(1)
 	case log.PANIC:
 		panic(&testloggerError{Entry: e, msg: string(byt)})
 	}
@@ -416,8 +426,6 @@ func StringFromLevel(lvl log.Level) string {
 		return "ERROR"
 	case log.PANIC:
 		return "PANIC"
-	case log.FATAL:
-		return "FATAL"
 	}
 	return "UNKN"
 }

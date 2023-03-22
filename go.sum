@@ -155,12 +155,8 @@ github.com/ryanuber/columnize v2.1.0+incompatible/go.mod h1:sm1tb6uqfes/u+d4ooFo
 github.com/schollz/closestmatch v2.1.0+incompatible/go.mod h1:RtP1ddjLong6gTkbtmuhtR2uUrrJOpYzYRvbcPAid+g=
 github.com/secureworks/logger/internal v1.1.0 h1:IS94Zzlpc5Y5XPfpf9zPDLadgs0BYX5d8CkUOMAgO9w=
 github.com/secureworks/logger/internal v1.1.0/go.mod h1:+qvVncRMoqdsGtw+R6Ff/M48QC34I2W2uKGaNvxw0Dc=
-github.com/secureworks/logger/log v1.1.0 h1:rfBnBswSGHLtyO3qNv66tnUPjekzJ6LEuV+PTFasofo=
-github.com/secureworks/logger/log v1.1.0/go.mod h1:joi16d/v8AfHARO8wsU8o2IDC1zex9gOWjBC+HjXF54=
 github.com/secureworks/logger/logrus v1.1.0 h1:icVPFUHJQsy+NigChV97yh4exsHwOk/gIhBnMnr29ns=
 github.com/secureworks/logger/logrus v1.1.0/go.mod h1:LkEoUhXvM8bqnn0o/uiyW5ehE9570/yQ6aFPtQlZQY4=
-github.com/secureworks/logger/middleware v1.1.1 h1:DnRHZx+EOtui64wetiu7SWGBnhatNgUWPtLIdIemkc4=
-github.com/secureworks/logger/middleware v1.1.1/go.mod h1:0OgePVJYYc/3GFvcyE+5hbQJWrxFQ+WMmM3vNaMsblk=
 github.com/secureworks/logger/testlogger v1.1.0 h1:FDgTNZbCATHf0jtCt209Gb6ngQe578u++FQyVAFX5ww=
 github.com/secureworks/logger/testlogger v1.1.0/go.mod h1:Us4ToNHL/pgAWTTd9NAIymTy4GEgV6gdnniA1Q4LkyE=
 github.com/secureworks/logger/zerolog v1.1.0 h1:O10odZfTpGBsW6cJMyfbyMfRLhnExe7FAmzgeujcAuE=
