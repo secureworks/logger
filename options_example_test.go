@@ -8,9 +8,9 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/sirupsen/logrus"
 
+	_ "github.com/secureworks/logger/drivers/logrus"
+	_ "github.com/secureworks/logger/drivers/zerolog"
 	"github.com/secureworks/logger/log"
-	_ "github.com/secureworks/logger/logrus"
-	_ "github.com/secureworks/logger/zerolog"
 )
 
 func ExampleOption() {
