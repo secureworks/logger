@@ -10,9 +10,10 @@ import (
 )
 
 type logger struct {
-	logger   *zerolog.Logger
-	level    zerolog.Level
-	errStack bool
+	logger          *zerolog.Logger
+	level           zerolog.Level
+	reusableEntries bool
+	errStack        bool
 }
 
 var _ interface {
@@ -54,11 +55,11 @@ func (l *logger) WithError(err error) log.Entry {
 	return l.Error().WithError(err)
 }
 
-func (l *logger) WithField(key string, val interface{}) log.Entry {
+func (l *logger) WithField(key string, val any) log.Entry {
 	return l.Entry(0).WithField(key, val)
 }
 
-func (l *logger) WithFields(fields map[string]interface{}) log.Entry {
+func (l *logger) WithFields(fields map[string]any) log.Entry {
 	return l.Entry(0).WithFields(fields)
 }
 
@@ -78,19 +79,19 @@ func (l *logger) WriteCloser(level log.Level) io.WriteCloser {
 	return writeLevelCloser{log: l, level: level}
 }
 
-func (l *logger) GetLogger() interface{} {
+func (l *logger) GetLogger() any {
 	if l.notValid() {
 		return nil
 	}
 	return l.logger
 }
 
-func (l *logger) SetLogger(iface interface{}) {
-	if logger, ok := iface.(*zerolog.Logger); ok && !l.notValid() {
-		l.logger = logger
+func (l *logger) SetLogger(i any) {
+	if zLogger, ok := i.(*zerolog.Logger); ok && !l.notValid() {
+		l.logger = zLogger
 	}
-	if logger, ok := iface.(zerolog.Logger); ok && !l.notValid() {
-		l.logger = &logger
+	if zLogger, ok := i.(zerolog.Logger); ok && !l.notValid() {
+		l.logger = &zLogger
 	}
 }
 
@@ -110,6 +111,19 @@ func (l *logger) newEntry(level zerolog.Level) log.Entry {
 		return l.DisabledEntry()
 	}
 
+	if l.reusableEntries {
+		zContext := l.logger.With()
+		if l.errStack {
+			zContext = zContext.Stack()
+		}
+		return &entry[zerolog.Context]{
+			entry:       any(zContext).(zerologEntry[zerolog.Context]),
+			caller:      make([]string, 0, 1),
+			loggerLevel: l.level,
+			level:       level,
+		}
+	}
+
 	// We have to use NoLevel, or we can't change them after the fact:
 	//   - https://github.com/rs/zerolog/blob/7825d863376faee2723fc99c061c538bd80812c8/log.go#L419
 	//   - https://github.com/rs/zerolog/pull/255
@@ -117,13 +131,12 @@ func (l *logger) newEntry(level zerolog.Level) log.Entry {
 	// Our own *entry type will write the level as needed.
 	//
 	// See: https://github.com/rs/zerolog/issues/408
-	e := l.logger.WithLevel(zerolog.NoLevel)
+	zEvent := l.logger.WithLevel(zerolog.NoLevel)
 	if l.errStack {
-		e = e.Stack()
+		zEvent = zEvent.Stack()
 	}
-
-	return &entry{
-		entry:       e,
+	return &entry[*zerolog.Event]{
+		entry:       any(zEvent).(zerologEntry[*zerolog.Event]),
 		caller:      make([]string, 0, 1),
 		loggerLevel: l.level,
 		level:       level,

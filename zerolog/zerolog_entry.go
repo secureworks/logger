@@ -11,8 +11,8 @@ import (
 	"github.com/secureworks/logger/log"
 )
 
-type entry struct {
-	entry       *zerolog.Event
+type entry[T zerologEntryable] struct {
+	entry       zerologEntry[T]
 	caller      []string
 	message     string
 	async       bool
@@ -25,7 +25,7 @@ var _ interface {
 	log.UnderlyingLogger
 } = (*entry)(nil)
 
-func (e *entry) Async() log.Entry {
+func (e *entry[T]) Async() log.Entry {
 	if e.notValid() {
 		return e
 	}
@@ -33,7 +33,7 @@ func (e *entry) Async() log.Entry {
 	return e
 }
 
-func (e *entry) Caller(skip ...int) log.Entry {
+func (e *entry[T]) Caller(skip ...int) log.Entry {
 	if e.notValid() {
 		return e
 	}
@@ -57,7 +57,7 @@ func (e *entry) Caller(skip ...int) log.Entry {
 	return e
 }
 
-func (e *entry) WithError(errs ...error) log.Entry {
+func (e *entry[T]) WithError(errs ...error) log.Entry {
 	le := len(errs)
 	if e.notValid() || le == 0 {
 		return e
@@ -71,7 +71,7 @@ func (e *entry) WithError(errs ...error) log.Entry {
 	return e
 }
 
-func (e *entry) WithField(key string, val interface{}) log.Entry {
+func (e *entry[T]) WithField(key string, val any) log.Entry {
 	if e.notValid() {
 		return e
 	}
@@ -79,7 +79,7 @@ func (e *entry) WithField(key string, val interface{}) log.Entry {
 	return e
 }
 
-func (e *entry) WithFields(fields map[string]interface{}) log.Entry {
+func (e *entry[T]) WithFields(fields map[string]any) log.Entry {
 	if e.notValid() || len(fields) == 0 {
 		return e
 	}
@@ -87,7 +87,7 @@ func (e *entry) WithFields(fields map[string]interface{}) log.Entry {
 	return e
 }
 
-func (e *entry) WithBool(key string, bls ...bool) log.Entry {
+func (e *entry[T]) WithBool(key string, bls ...bool) log.Entry {
 	lb := len(bls)
 	if e.notValid() || lb == 0 {
 		return e
@@ -101,7 +101,7 @@ func (e *entry) WithBool(key string, bls ...bool) log.Entry {
 	return e
 }
 
-func (e *entry) WithDur(key string, durs ...time.Duration) log.Entry {
+func (e *entry[T]) WithDur(key string, durs ...time.Duration) log.Entry {
 	ld := len(durs)
 	if e.notValid() || ld == 0 {
 		return e
@@ -115,7 +115,7 @@ func (e *entry) WithDur(key string, durs ...time.Duration) log.Entry {
 	return e
 }
 
-func (e *entry) WithInt(key string, is ...int) log.Entry {
+func (e *entry[T]) WithInt(key string, is ...int) log.Entry {
 	li := len(is)
 	if e.notValid() || li == 0 {
 		return e
@@ -129,7 +129,7 @@ func (e *entry) WithInt(key string, is ...int) log.Entry {
 	return e
 }
 
-func (e *entry) WithUint(key string, us ...uint) log.Entry {
+func (e *entry[T]) WithUint(key string, us ...uint) log.Entry {
 	lu := len(us)
 	if e.notValid() || lu == 0 {
 		return e
@@ -143,7 +143,7 @@ func (e *entry) WithUint(key string, us ...uint) log.Entry {
 	return e
 }
 
-func (e *entry) WithStr(key string, strs ...string) log.Entry {
+func (e *entry[T]) WithStr(key string, strs ...string) log.Entry {
 	ls := len(strs)
 	if e.notValid() || ls == 0 {
 		return e
@@ -157,7 +157,7 @@ func (e *entry) WithStr(key string, strs ...string) log.Entry {
 	return e
 }
 
-func (e *entry) WithTime(key string, ts ...time.Time) log.Entry {
+func (e *entry[T]) WithTime(key string, ts ...time.Time) log.Entry {
 	lt := len(ts)
 	if e.notValid() || lt == 0 {
 		return e
@@ -171,19 +171,19 @@ func (e *entry) WithTime(key string, ts ...time.Time) log.Entry {
 	return e
 }
 
-func (e *entry) Trace() log.Entry { return e.setLevel(zerolog.TraceLevel) }
-func (e *entry) Debug() log.Entry { return e.setLevel(zerolog.DebugLevel) }
-func (e *entry) Info() log.Entry  { return e.setLevel(zerolog.InfoLevel) }
-func (e *entry) Warn() log.Entry  { return e.setLevel(zerolog.WarnLevel) }
-func (e *entry) Error() log.Entry { return e.setLevel(zerolog.ErrorLevel) }
-func (e *entry) Panic() log.Entry { return e.setLevel(zerolog.PanicLevel) }
-func (e *entry) Fatal() log.Entry { return e.setLevel(zerolog.FatalLevel) }
+func (e *entry[T]) Trace() log.Entry { return e.setLevel(zerolog.TraceLevel) }
+func (e *entry[T]) Debug() log.Entry { return e.setLevel(zerolog.DebugLevel) }
+func (e *entry[T]) Info() log.Entry  { return e.setLevel(zerolog.InfoLevel) }
+func (e *entry[T]) Warn() log.Entry  { return e.setLevel(zerolog.WarnLevel) }
+func (e *entry[T]) Error() log.Entry { return e.setLevel(zerolog.ErrorLevel) }
+func (e *entry[T]) Panic() log.Entry { return e.setLevel(zerolog.PanicLevel) }
+func (e *entry[T]) Fatal() log.Entry { return e.setLevel(zerolog.FatalLevel) }
 
-func (e *entry) Msgf(format string, vals ...interface{}) {
+func (e *entry[T]) Msgf(format string, vals ...any) {
 	e.Msg(fmt.Sprintf(format, vals...))
 }
 
-func (e *entry) Msg(message string) {
+func (e *entry[T]) Msg(message string) {
 	if e.notValid() {
 		return
 	}
@@ -194,11 +194,22 @@ func (e *entry) Msg(message string) {
 	}
 }
 
-func (e *entry) Send() {
+func (e *entry[T]) Send() {
+	switch sendable := any(e.entry).(type) {
+	case *zerolog.Event:
+		sendEvent(e, sendable)
+	case zerolog.Context:
+		sendContext(e, sendable)
+	default:
+		panic(fmt.Errorf("log.Entry: log/zerolog driver: unknown entry implementation %T", e.entry))
+	}
+}
+
+func sendEvent[T zerologEntryable](e *entry[T], zEvent *zerolog.Event) {
 	if !e.enabled() {
 		// If we cut out early && the entry is valid, recycle it.
 		if !e.notValid() {
-			putEvent(e.entry)
+			putEvent(zEvent)
 			e.entry = nil
 		}
 
@@ -214,8 +225,8 @@ func (e *entry) Send() {
 	}
 	e.entry = e.entry.Str(zerolog.LevelFieldName, zerolog.LevelFieldMarshalFunc(e.level))
 
-	changeEventLevel(e.entry, e.level) // Change the level if we can, before calling Msg.
-	e.entry.Msg(e.message)             // Recycles the zerolog.Entry for us (do not call putEvent again).
+	changeEventLevel(zEvent, e.level) // Change the level if we can, before calling Msg.
+	e.entry.Msg(e.message)            // Recycles the zerolog.Entry for us (do not call putEvent again).
 
 	// These are called by e.done here:
 	//   - https://github.com/rs/zerolog/blob/791ca15d999a97768ffd3b040116f9f5a772661a/event.go
@@ -231,7 +242,31 @@ func (e *entry) Send() {
 	}
 }
 
-func (e *entry) GetLogger() interface{} {
+func sendContext[T zerologEntryable](e *entry[T], zContext zerolog.Context) {
+	if !e.enabled() {
+		return
+	}
+
+	zl := zContext.Logger()
+	ent := zl.WithLevel(e.level)
+
+	if len(e.caller) > 0 {
+		ent = ent.Strs(log.CallerField, e.caller)
+	}
+
+	ent.Msg(e.message)
+
+	// See note in sendEvent above.
+	switch e.level {
+	case zerolog.PanicLevel:
+		panic(e.message)
+	case zerolog.FatalLevel:
+		os.Exit(1)
+	}
+	e.message = ""
+}
+
+func (e *entry[T]) GetLogger() any {
 	if e.notValid() {
 		return nil
 	}
@@ -239,9 +274,9 @@ func (e *entry) GetLogger() interface{} {
 	return e.entry
 }
 
-func (e *entry) SetLogger(l interface{}) {
-	if ent, ok := l.(*zerolog.Event); ok && !e.notValid() {
-		e.entry = ent
+func (e *entry[T]) SetLogger(l any) {
+	if zEntry, ok := l.(zerologEntry[T]); ok && !e.notValid() {
+		e.entry = zEntry
 	}
 }
 
@@ -249,14 +284,13 @@ func (e *entry) SetLogger(l interface{}) {
 
 // DisabledEntry is an assertable method/interface if someone wants to
 // disable zerolog events at runtime.
-func (e *entry) DisabledEntry() log.Entry {
+func (e *entry[T]) DisabledEntry() log.Entry {
 	if e.notValid() {
 		return e
 	}
 
-	// This will disable all other methods.
-	if e.entry != nil {
-		putEvent(e.entry)
+	if event, ok := any(e.entry).(*zerolog.Event); ok {
+		putEvent(event)
 		e.entry = nil
 	}
 
@@ -265,15 +299,15 @@ func (e *entry) DisabledEntry() log.Entry {
 
 // Entry utility functions.
 
-func (e *entry) notValid() bool {
+func (e *entry[T]) notValid() bool {
 	return e == nil || e.entry == nil
 }
 
-func (e *entry) enabled() bool {
+func (e *entry[T]) enabled() bool {
 	return !e.notValid() && e.level >= e.loggerLevel
 }
 
-func (e *entry) setLevel(level zerolog.Level) log.Entry {
+func (e *entry[T]) setLevel(level zerolog.Level) log.Entry {
 	if e.notValid() {
 		return e
 	}

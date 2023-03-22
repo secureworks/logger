@@ -4,6 +4,8 @@
 package zerolog
 
 import (
+	"time"
+
 	"github.com/rs/zerolog"
 
 	"github.com/secureworks/logger/internal/common"
@@ -43,4 +45,28 @@ func levelToZerolog(level log.Level) zerolog.Level {
 	default:
 		return zerolog.InfoLevel
 	}
+}
+
+type zerologEntryable interface {
+	*zerolog.Event | zerolog.Context
+}
+
+type zerologEntry[T zerologEntryable] interface {
+	Err(error) zerologEntry[T]
+	Errs(string, []error) zerologEntry[T]
+	Msg(string)
+	Interface(string, any) zerologEntry[T]
+	Fields(map[string]any) zerologEntry[T]
+	Str(string, string) zerologEntry[T]
+	Strs(string, []string) zerologEntry[T]
+	Bool(string, bool) zerologEntry[T]
+	Bools(string, []bool) zerologEntry[T]
+	Time(string, time.Time) zerologEntry[T]
+	Times(string, []time.Time) zerologEntry[T]
+	Dur(string, time.Duration) zerologEntry[T]
+	Durs(string, []time.Duration) zerologEntry[T]
+	Int(string, int) zerologEntry[T]
+	Ints(string, []int) zerologEntry[T]
+	Uint(string, uint) zerologEntry[T]
+	Uints(string, []uint) zerologEntry[T]
 }
