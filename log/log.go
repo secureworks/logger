@@ -88,11 +88,11 @@ type Logger interface {
 
 	// WithField inserts the key and value into a new Entry (as tags or
 	// metadata information) and returns the Entry.
-	WithField(key string, value interface{}) Entry
+	WithField(key string, value any) Entry
 
 	// WithFields inserts the given set of fields into a new Entry and
 	// returns the Entry.
-	WithFields(fields map[string]interface{}) Entry
+	WithFields(fields map[string]any) Entry
 
 	// Entry returns a new Entry at the provided log level.
 	Entry(Level) Entry
@@ -127,6 +127,6 @@ type Logger interface {
 //
 // NOTE(IB): this is currently required for CustomOptions to work.
 type UnderlyingLogger interface {
-	GetLogger() interface{}
-	SetLogger(interface{})
+	GetLogger() any
+	SetLogger(any)
 }

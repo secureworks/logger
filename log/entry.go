@@ -16,7 +16,7 @@ type Entry interface {
 
 	// Msgf formats and sets the final log message for this Entry. It will
 	// also send the message if Async has not been set.
-	Msgf(string, ...interface{})
+	Msgf(string, ...any)
 
 	// Msg sets the final log message for this Entry. It will also send
 	// the message if Async has not been set.
@@ -39,40 +39,40 @@ type Entry interface {
 
 	// WithField inserts the key and value into the Entry (as tags or
 	// metadata information) and returns the Entry.
-	WithField(key string, value interface{}) Entry
+	WithField(key string, value any) Entry
 
 	// WithFields inserts the given set of fields into the Entry and
 	// returns the Entry.
-	WithFields(fields map[string]interface{}) Entry
+	WithFields(fields map[string]any) Entry
 
 	// WithStr is a type-safe convenience for injecting a string (or
-	// strings, how they are stored is implmentation-specific) field.
-	WithStr(key string, strs ...string) Entry
+	// strings, how they are stored is implementation-specific) field.
+	WithStr(key string, strings ...string) Entry
 
 	// WithBool is a type-safe convenience for injecting a Boolean (or
-	// Booleans, how they are stored is implmentation-specific) field.
-	WithBool(key string, bls ...bool) Entry
+	// Booleans, how they are stored is implementation-specific) field.
+	WithBool(key string, bools ...bool) Entry
 
 	// WithDur is a type-safe convenience for injecting a time.Duration
-	// (or time.Durations, how they are stored is implmentation-specific)
+	// (or time.Durations, how they are stored is implementation-specific)
 	// field.
-	WithDur(key string, durs ...time.Duration) Entry
+	WithDur(key string, durations ...time.Duration) Entry
 
 	// WithInt is a type-safe convenience for injecting an integer (or
-	// integers, how they are stored is implmentation-specific) field.
-	WithInt(key string, is ...int) Entry
+	// integers, how they are stored is implementation-specific) field.
+	WithInt(key string, ints ...int) Entry
 
-	// WithUint is a type-safe convenience for injecting an unsigned
-	// integer (or unsigned integers, how they are stored is
-	// implmentation-specific) field.
-	WithUint(key string, us ...uint) Entry
+	// WithUint is a type-safe convenience for injecting an unsigned integer
+	// (or unsigned integers, how they are stored is
+	// implementation-specific) field.
+	WithUint(key string, uints ...uint) Entry
 
 	// WithTime is a type-safe convenience for injecting a time.Time (or
-	// time.Times, how they are stored is implmentation-specific) field.
+	// time.Times, how they are stored is implementation-specific) field.
 	//
 	// NOTE(IB): many loggers add a "time" key automatically and time
 	// formatting may be dependant on configuration or logger choice.
-	WithTime(key string, ts ...time.Time) Entry
+	WithTime(key string, times ...time.Time) Entry
 
 	// Trace updates the Entry's level to TRACE.
 	Trace() Entry

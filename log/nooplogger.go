@@ -27,10 +27,10 @@ type noopLogger struct{}
 
 var _ Logger = (*noopLogger)(nil)
 
-func (noopLogger) IsLevelEnabled(lvl Level) bool             { return false }
-func (noopLogger) WithError(_ error) Entry                   { return noopEntry{} }
-func (noopLogger) WithField(_ string, _ interface{}) Entry   { return noopEntry{} }
-func (noopLogger) WithFields(_ map[string]interface{}) Entry { return noopEntry{} }
+func (noopLogger) IsLevelEnabled(lvl Level) bool     { return false }
+func (noopLogger) WithError(_ error) Entry           { return noopEntry{} }
+func (noopLogger) WithField(_ string, _ any) Entry   { return noopEntry{} }
+func (noopLogger) WithFields(_ map[string]any) Entry { return noopEntry{} }
 
 func (noopLogger) Entry(_ Level) Entry { return noopEntry{} }
 func (noopLogger) Trace() Entry        { return noopEntry{} }
@@ -58,8 +58,8 @@ func (n noopEntry) Async() Entry          { return n }
 func (n noopEntry) Caller(_ ...int) Entry { return n }
 
 func (n noopEntry) WithError(_ ...error) Entry                 { return n }
-func (n noopEntry) WithField(_ string, _ interface{}) Entry    { return n }
-func (n noopEntry) WithFields(_ map[string]interface{}) Entry  { return n }
+func (n noopEntry) WithField(_ string, _ any) Entry            { return n }
+func (n noopEntry) WithFields(_ map[string]any) Entry          { return n }
 func (n noopEntry) WithBool(_ string, _ ...bool) Entry         { return n }
 func (n noopEntry) WithDur(_ string, _ ...time.Duration) Entry { return n }
 func (n noopEntry) WithInt(_ string, _ ...int) Entry           { return n }
@@ -75,6 +75,6 @@ func (n noopEntry) Error() Entry { return n }
 func (n noopEntry) Panic() Entry { return n }
 func (n noopEntry) Fatal() Entry { return n }
 
-func (noopEntry) Msgf(_ string, _ ...interface{}) {}
-func (noopEntry) Msg(_ string)                    {}
-func (noopEntry) Send()                           {}
+func (noopEntry) Msgf(_ string, _ ...any) {}
+func (noopEntry) Msg(_ string)            {}
+func (noopEntry) Send()                   {}
