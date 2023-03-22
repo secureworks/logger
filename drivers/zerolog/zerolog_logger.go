@@ -24,7 +24,7 @@ var _ interface {
 // newLogger instantiates a new log.Logger with a Zerolog driver using
 // the given configuration and Zerolog options.
 func newLogger(config *log.Config, opts ...log.Option) (log.Logger, error) {
-	level := levelToZerolog(config.Level)
+	level := levelToZerologLevel(config.Level)
 	l := &logger{
 		errStack: config.EnableErrStack,
 		level:    level,
@@ -48,23 +48,22 @@ func newLogger(config *log.Config, opts ...log.Option) (log.Logger, error) {
 }
 
 func (l *logger) IsLevelEnabled(level log.Level) bool {
-	return levelToZerolog(level) <= l.level
+	return levelToZerologLevel(level) <= l.level
 }
 
-func (l *logger) WithError(err error) log.Entry {
-	return l.Error().WithError(err)
+func (l *logger) LogLevel() log.Level {
+	return zerologLevelToLevel(l.level)
 }
 
-func (l *logger) WithField(key string, val any) log.Entry {
-	return l.Entry(0).WithField(key, val)
+func (l *logger) Print(v ...any) {
+	l.Entry(l.LogLevel()).Msg(v)
 }
-
-func (l *logger) WithFields(fields map[string]any) log.Entry {
-	return l.Entry(0).WithFields(fields)
+func (l *logger) Printf(format string, v ...any) {
+	l.Entry(l.LogLevel()).Msgf(format, v...)
 }
 
 func (l *logger) Entry(level log.Level) log.Entry {
-	return l.newEntry(levelToZerolog(level))
+	return l.newEntry(levelToZerologLevel(level))
 }
 
 func (l *logger) Trace() log.Entry { return l.newEntry(zerolog.TraceLevel) }
@@ -100,10 +99,8 @@ func (l *logger) SetLogger(i any) {
 // DisabledEntry is an assertable method/interface if someone wants to
 // disable zerolog events at runtime.
 func (l *logger) DisabledEntry() log.Entry {
-	return (*entry)(nil)
+	return (*entry[*zerolog.Event])(nil)
 }
-
-// Logger utility functions.
 
 // Creates a new entry at the given level.
 func (l *logger) newEntry(level zerolog.Level) log.Entry {

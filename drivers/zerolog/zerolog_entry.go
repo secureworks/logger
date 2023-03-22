@@ -23,7 +23,7 @@ type entry[T zerologEntryable] struct {
 var _ interface {
 	log.Entry
 	log.UnderlyingLogger
-} = (*entry)(nil)
+} = (*entry[*zerolog.Event])(nil)
 
 func (e *entry[T]) Async() log.Entry {
 	if e.notValid() {
@@ -31,6 +31,10 @@ func (e *entry[T]) Async() log.Entry {
 	}
 	e.async = !e.async
 	return e
+}
+
+func (e *entry[T]) IsLevelEnabled(level log.Level) bool {
+	return levelToZerologLevel(level) <= e.loggerLevel
 }
 
 func (e *entry[T]) Caller(skip ...int) log.Entry {
@@ -179,16 +183,16 @@ func (e *entry[T]) Error() log.Entry { return e.setLevel(zerolog.ErrorLevel) }
 func (e *entry[T]) Panic() log.Entry { return e.setLevel(zerolog.PanicLevel) }
 func (e *entry[T]) Fatal() log.Entry { return e.setLevel(zerolog.FatalLevel) }
 
-func (e *entry[T]) Msgf(format string, vals ...any) {
-	e.Msg(fmt.Sprintf(format, vals...))
+func (e *entry[T]) Msgf(format string, v ...any) {
+	e.Msg(fmt.Sprintf(format, v...))
 }
 
-func (e *entry[T]) Msg(message string) {
+func (e *entry[T]) Msg(v any) {
 	if e.notValid() {
 		return
 	}
 
-	e.message = message
+	e.message = fmt.Sprintf("%v", v)
 	if !e.async {
 		e.Send()
 	}

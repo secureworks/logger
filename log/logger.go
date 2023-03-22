@@ -1,6 +1,8 @@
 package log
 
-import "io"
+import (
+	"io"
+)
 
 // Logger is the minimum interface loggers should implement when used
 // with CTPx packages.
@@ -8,6 +10,7 @@ type Logger interface {
 
 	// TODO(PH)
 	LogLevel() Level
+	// IsLevelEnabled(Level) bool TODO(PH) ... already largely implemented... useful?
 
 	// WriteCloser returns an io.Writer that, when written to, writes logs
 	// at the given level. It is the callers responsibility to call Close

@@ -18,8 +18,8 @@ func NewConfigWithBuffer(t *testing.T, logLevel log.Level) (*log.Config, *bytes.
 
 	buf := make([]byte, 0, 100)
 	out := bytes.NewBuffer(buf)
-	config := log.DefaultConfig(func(envvar string) string {
-		return os.Getenv(envvar)
+	config := log.DefaultConfigWithEnvLookup(func(envVar string) string {
+		return os.Getenv(envVar)
 	})
 	config.Level = logLevel
 	config.Output = out

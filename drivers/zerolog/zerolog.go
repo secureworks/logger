@@ -8,7 +8,7 @@ import (
 
 	"github.com/rs/zerolog"
 
-	"github.com/secureworks/logger/internal/common"
+	"github.com/secureworks/errors"
 	"github.com/secureworks/logger/log"
 )
 
@@ -17,16 +17,18 @@ func init() {
 	// These are package vars in Zerolog so putting them here is less race-y
 	// than setting them in newLogger.
 	zerolog.ErrorStackFieldName = log.StackField
-	zerolog.ErrorStackMarshaler = func(err error) interface{} {
-		st, _ := common.WithStackTrace(err)
-		return st.StackTrace()
+	zerolog.ErrorStackMarshaler = func(err error) any {
+		if ff := errors.FramesFrom(err); len(ff) > 0 {
+			return ff
+		}
+		return errors.CallStackAt(2)
 	}
 
 	// Register logger.
 	log.Register("zerolog", newLogger)
 }
 
-func levelToZerolog(level log.Level) zerolog.Level {
+func levelToZerologLevel(level log.Level) zerolog.Level {
 	switch level {
 	case log.TRACE:
 		return zerolog.TraceLevel
@@ -40,10 +42,27 @@ func levelToZerolog(level log.Level) zerolog.Level {
 		return zerolog.ErrorLevel
 	case log.PANIC:
 		return zerolog.PanicLevel
-	case log.FATAL:
-		return zerolog.FatalLevel
 	default:
 		return zerolog.InfoLevel
+	}
+}
+
+func zerologLevelToLevel(level zerolog.Level) log.Level {
+	switch level {
+	case zerolog.TraceLevel:
+		return log.TRACE
+	case zerolog.DebugLevel:
+		return log.DEBUG
+	case zerolog.InfoLevel:
+		return log.INFO
+	case zerolog.WarnLevel:
+		return log.WARN
+	case zerolog.ErrorLevel:
+		return log.ERROR
+	case zerolog.PanicLevel:
+		return log.PANIC
+	default:
+		return log.INFO
 	}
 }
 

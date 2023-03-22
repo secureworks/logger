@@ -5,8 +5,8 @@ import (
 	"io/ioutil"
 	"testing"
 
-	"github.com/secureworks/logger/internal/testutils"
 	"github.com/secureworks/logger/log"
+	"github.com/secureworks/logger/log/testutils"
 )
 
 const (
@@ -43,7 +43,7 @@ func TestZerolog_New(t *testing.T) {
 	})
 
 	t.Run("configuration with nil output", func(t *testing.T) {
-		config := log.DefaultConfig(nil)
+		config := log.DefaultConfig()
 		config.Output = nil
 
 		logger, err := log.Open("zerolog", config)

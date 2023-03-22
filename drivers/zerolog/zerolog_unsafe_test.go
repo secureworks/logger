@@ -10,8 +10,8 @@ import (
 
 	"github.com/rs/zerolog"
 
-	"github.com/secureworks/logger/internal/testutils"
 	"github.com/secureworks/logger/log"
+	"github.com/secureworks/logger/log/testutils"
 )
 
 func TestZerolog_UnsafeEventLevelChange(t *testing.T) {
