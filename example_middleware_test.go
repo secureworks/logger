@@ -15,7 +15,7 @@ import (
 // middleware too. See the middleware package for documentation
 // examples.
 func Example_usingMiddleware() {
-	config := log.DefaultConfig(nil)
+	config := log.DefaultConfig()
 	config.Output = os.Stdout
 	logger, _ := log.Open("zerolog", config)
 

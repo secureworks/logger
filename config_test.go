@@ -5,9 +5,9 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/secureworks/logger/internal/testutils"
+	"github.com/secureworks/logger/drivers/testlogger"
 	"github.com/secureworks/logger/log"
-	"github.com/secureworks/logger/testlogger"
+	"github.com/secureworks/logger/log/testutils"
 )
 
 var defaultConfig = &log.Config{

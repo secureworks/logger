@@ -11,7 +11,7 @@ import (
 // for the logger implementation beyond the values in the Config. For
 // more examples see log.Option and log.CustomOption.
 func Example_usingOptions() {
-	config := log.DefaultConfig(nil)
+	config := log.DefaultConfig()
 	config.Output = os.Stdout
 
 	// This CustomOption is attaching a hook using Zerolog's Logger.Hook method.

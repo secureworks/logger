@@ -17,25 +17,24 @@
 // use and then generate a logger with log.Open and whatever
 // configuration you want. The simplest setup would look like:
 //
-//     package main
+//	package main
 //
-//     import (
-//         "github.com/secureworks/logger/log"
-//         _ "github.com/secureworks/logger/zerolog"
-//     )
+//	import (
+//	    "github.com/secureworks/logger/log"
+//	    _ "github.com/secureworks/logger/zerolog"
+//	)
 //
-//     func main() {
-//         config := log.DefaultConfig(nil) // os.Getenv is used by default if you pass nil.
-//         config.EnableErrStack = true
+//	func main() {
+//	    config := log.DefaultConfig()
+//	    config.EnableErrStack = true
 //
-//         logger, err := log.Open("zerolog", config)
-//         if err != nil {
-//             panic(err)
-//         }
+//	    logger, err := log.Open("zerolog", config)
+//	    if err != nil {
+//	        panic(err)
+//	    }
 //
-//         logger.Debug().Msg("logger instantiated")
-//     }
+//	    logger.Debug().Msg("logger instantiated")
+//	}
 //
 // See the examples for common use cases.
-//
 package logger

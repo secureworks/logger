@@ -153,12 +153,12 @@ github.com/rs/zerolog v1.27.0/go.mod h1:7frBqO0oezxmnO7GF86FY++uy8I0Tk/If5ni1G9Q
 github.com/russross/blackfriday v1.5.2/go.mod h1:JO/DiYxRf+HjHt06OyowR9PTA263kcR/rfWxYHBV53g=
 github.com/ryanuber/columnize v2.1.0+incompatible/go.mod h1:sm1tb6uqfes/u+d4ooFouqFdy9/2g9QGwK3SQygK0Ts=
 github.com/schollz/closestmatch v2.1.0+incompatible/go.mod h1:RtP1ddjLong6gTkbtmuhtR2uUrrJOpYzYRvbcPAid+g=
+github.com/secureworks/errors v0.1.2 h1:7CYiN00neeeEtSDqVagttKXYyLGu8sE7wBqiD+Eq8E0=
+github.com/secureworks/errors v0.1.2/go.mod h1:iGDm+slXjGWuc5ozdltnR715LbXzarYt3nE/ydfST7E=
 github.com/secureworks/logger/internal v1.1.0 h1:IS94Zzlpc5Y5XPfpf9zPDLadgs0BYX5d8CkUOMAgO9w=
 github.com/secureworks/logger/internal v1.1.0/go.mod h1:+qvVncRMoqdsGtw+R6Ff/M48QC34I2W2uKGaNvxw0Dc=
 github.com/secureworks/logger/logrus v1.1.0 h1:icVPFUHJQsy+NigChV97yh4exsHwOk/gIhBnMnr29ns=
 github.com/secureworks/logger/logrus v1.1.0/go.mod h1:LkEoUhXvM8bqnn0o/uiyW5ehE9570/yQ6aFPtQlZQY4=
-github.com/secureworks/logger/testlogger v1.1.0 h1:FDgTNZbCATHf0jtCt209Gb6ngQe578u++FQyVAFX5ww=
-github.com/secureworks/logger/testlogger v1.1.0/go.mod h1:Us4ToNHL/pgAWTTd9NAIymTy4GEgV6gdnniA1Q4LkyE=
 github.com/secureworks/logger/zerolog v1.1.0 h1:O10odZfTpGBsW6cJMyfbyMfRLhnExe7FAmzgeujcAuE=
 github.com/secureworks/logger/zerolog v1.1.0/go.mod h1:631nGdrOzGWhp58DbwYThmvavIls1BcL06yJ+21hGLE=
 github.com/sergi/go-diff v1.0.0/go.mod h1:0CfEIISq7TuYL3j771MWULgwwjU+GofnZX9QAmXWZgo=

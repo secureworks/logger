@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/secureworks/logger/internal/testutils"
+	"github.com/secureworks/logger/log/testutils"
 	"github.com/secureworks/logger/middleware"
 )
 

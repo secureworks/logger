@@ -14,7 +14,7 @@ func Example() {
 	os.Setenv(string(log.LogLevel), "DEBUG")
 	os.Setenv(string(log.LocalDevel), "true")
 
-	config := log.DefaultConfig(os.Getenv) // Same as passing nil here.
+	config := log.DefaultConfig()
 
 	// ... but setting the output must be done directly:
 	config.Output = os.Stdout
@@ -43,7 +43,7 @@ func Example() {
 	// You may use WithError, WithField or WithFields directly on a Logger
 	// to create an entry at the default log level and give it those
 	// fields.
-	errEntry := logger.WithError(errors.New("error message"))
+	errEntry := logger.Error().WithError(errors.New("error message"))
 
 	// You may write an entry without adding a "message" field by using
 	// Send.

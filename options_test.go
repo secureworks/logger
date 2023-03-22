@@ -4,8 +4,8 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/secureworks/logger/internal/testutils"
 	"github.com/secureworks/logger/log"
+	"github.com/secureworks/logger/log/testutils"
 )
 
 func TestOptions_CustomOption(t *testing.T) {

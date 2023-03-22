@@ -54,7 +54,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/secureworks/logger/internal/common"
+	"github.com/secureworks/errors"
 	"github.com/secureworks/logger/log"
 )
 
@@ -63,7 +63,7 @@ import (
 // ErrorLog field will also be set, in which case the returned io.Closer
 // should be closed when finished.
 func NewHTTPServer(logger log.Logger, srvLvl log.Level) (*http.Server, io.Closer) {
-	ctx := log.CtxWithLogger(context.Background(), logger)
+	ctx := log.ContextWithLogger(context.Background(), logger)
 
 	srv := &http.Server{
 		BaseContext: func(_ net.Listener) context.Context { return ctx },
@@ -142,12 +142,13 @@ func NewHTTPRequestMiddleware(logger log.Logger, lvl log.Level, attrs *HTTPReque
 				pve = fmt.Errorf("%v", pv)
 			}
 
-			st, _ := common.WithStackTrace(pve)
-
+			if ff := errors.FramesFrom(pve); len(ff) == 0 {
+				pve = errors.WithStackTrace(pve)
+			}
 			entry.Error().WithFields(map[string]interface{}{
 				// Try to keep PanicValue field consistent as a string.
 				log.PanicValue: fmt.Sprintf("%v", pv),
-				log.PanicStack: st.StackTrace(),
+				log.PanicStack: errors.FramesFrom(pve),
 			})
 
 			w.WriteHeader(http.StatusInternalServerError)
@@ -160,7 +161,7 @@ func NewHTTPRequestMiddleware(logger log.Logger, lvl log.Level, attrs *HTTPReque
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			entry := logger.Entry(lvl).Async()
 
-			ctx := log.CtxWithEntry(r.Context(), entry)
+			ctx := log.ContextWithEntry(r.Context(), entry)
 			r = r.WithContext(ctx)
 
 			// Wrap the response writer with the logger version.

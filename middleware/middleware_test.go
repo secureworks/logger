@@ -11,11 +11,10 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/secureworks/logger/internal/testutils"
+	"github.com/secureworks/logger/drivers/testlogger"
 	"github.com/secureworks/logger/log"
+	"github.com/secureworks/logger/log/testutils"
 	"github.com/secureworks/logger/middleware"
-	"github.com/secureworks/logger/testlogger"
-	_ "github.com/secureworks/logger/testlogger"
 )
 
 func TestNewHTTPServer(t *testing.T) {
@@ -26,7 +25,7 @@ func TestNewHTTPServer(t *testing.T) {
 	defer c.Close()
 
 	srv.Config.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		logger := log.LoggerFromCtx(r.Context())
+		logger := log.LoggerFromContext(r.Context())
 		testutils.AssertNotNil(t, logger)
 	})
 	srv.Start()
@@ -41,7 +40,7 @@ func TestNewHTTPServer(t *testing.T) {
 func TestHTTPRequestMiddleware(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/test/path", nil)
 	resp, logger := runMiddlewareAround(t, req, nil, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		entry := log.EntryFromCtx(r.Context())
+		entry := log.EntryFromContext(r.Context())
 		entry.WithStr("Meta", "data").Msg("message here")
 		w.WriteHeader(http.StatusOK)
 	}))
@@ -180,7 +179,7 @@ func runMiddlewareAround(
 ) (*httptest.ResponseRecorder, *testlogger.Logger) {
 	t.Helper()
 
-	logger, _ := testlogger.New(log.DefaultConfig(nil))
+	logger, _ := testlogger.New(log.DefaultConfig())
 	resp := httptest.NewRecorder()
 	h := middleware.NewHTTPRequestMiddleware(
 		logger,

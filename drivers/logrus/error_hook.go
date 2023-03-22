@@ -3,7 +3,6 @@ package logrus
 import (
 	"github.com/sirupsen/logrus"
 
-	"github.com/secureworks/logger/internal/common"
 	"github.com/secureworks/logger/log"
 )
 
@@ -26,7 +25,9 @@ func (errorHook) Fire(event *logrus.Entry) error {
 	if _, ok := event.Data[log.StackField]; ok {
 		return nil
 	}
-	st, ok := event.Data[logrus.ErrorKey].(common.StackTracer)
+	st, ok := event.Data[logrus.ErrorKey].(interface {
+		StackTrace() []uint
+	})
 	if !ok {
 		return nil
 	}
