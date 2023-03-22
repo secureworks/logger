@@ -4,10 +4,6 @@
 // reporting services including Sentry.
 package log
 
-import (
-	"io"
-)
-
 // Supported logging formats for the unified interface. To allow
 // agnostic mixing of implmentations we default to JSON-formatting.
 const (
@@ -69,64 +65,3 @@ const (
 	// traces.
 	StackField = "stack"
 )
-
-// Unified interface definitions.
-
-// Logger is the minimum interface loggers should implement when used
-// with CTPx packages.
-type Logger interface {
-	// WriteCloser returns an io.Writer that when written to writes logs
-	// at the given level. It is the callers responsibility to call Close
-	// when finished. This is particularly useful for redirecting the
-	// output of other loggers or even Readers with the help of
-	// io.TeeReader.
-	WriteCloser(Level) io.WriteCloser
-
-	// WithError attaches the given error into a new Entry and returns the
-	// Entry.
-	WithError(err error) Entry
-
-	// WithField inserts the key and value into a new Entry (as tags or
-	// metadata information) and returns the Entry.
-	WithField(key string, value any) Entry
-
-	// WithFields inserts the given set of fields into a new Entry and
-	// returns the Entry.
-	WithFields(fields map[string]any) Entry
-
-	// Entry returns a new Entry at the provided log level.
-	Entry(Level) Entry
-
-	// Trace returns a new Entry at TRACE level.
-	Trace() Entry
-
-	// Debug returns a new Entry at DEBUG level.
-	Debug() Entry
-
-	// Info returns a new Entry at INFO level.
-	Info() Entry
-
-	// Warn returns a new Entry at WARN level.
-	Warn() Entry
-
-	// Error returns a new Entry at ERROR level.
-	Error() Entry
-
-	// Panic returns a new Entry at PANIC level. Implementations should
-	// panic once the final message for the Entry is logged.
-	Panic() Entry
-
-	// Fatal returns a new Entry at FATAL level. Implementations should
-	// exit non-zero once the final message for the Entry is logged.
-	Fatal() Entry
-}
-
-// UnderlyingLogger is an escape hatch allowing Loggers registered with
-// this package the option to return their underlying implementation, as
-// well as reset it.
-//
-// NOTE(IB): this is currently required for CustomOptions to work.
-type UnderlyingLogger interface {
-	GetLogger() any
-	SetLogger(any)
-}

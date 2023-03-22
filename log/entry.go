@@ -1,6 +1,8 @@
 package log
 
-import "time"
+import (
+	"time"
+)
 
 // Entry is the primary interface by which individual log entries are
 // made.
@@ -10,17 +12,20 @@ type Entry interface {
 	// should not write to output until Send is called.
 	Async() Entry
 
+	// TODO(PH)
+	IsLevelEnabled(level Level) bool
+
 	// Send sends (writes) the current entry. This interface does not
 	// define the behavior of calling this method more than once.
 	Send()
 
 	// Msgf formats and sets the final log message for this Entry. It will
 	// also send the message if Async has not been set.
-	Msgf(string, ...any)
+	Msgf(format string, v ...any)
 
 	// Msg sets the final log message for this Entry. It will also send
 	// the message if Async has not been set.
-	Msg(msg string)
+	Msg(v any)
 
 	// Caller embeds a caller value into the existing Entry. A caller value
 	// is a filepath followed by line number. Skip determines the number of
@@ -30,12 +35,12 @@ type Entry interface {
 	// on the Entry to build a stack or execution trace.
 	Caller(skip ...int) Entry
 
-	// WithError attaches the given errors into a new Entry and returns
-	// the Entry. Depending on the logger implementation, multiple errors
-	// may be inserted as a slice of errors or a single multi-error.
-	// Calling the method more than once will overwrite the attached
-	// error(s) and not append them.
-	WithError(errs ...error) Entry
+	// WithErrors attaches the given errors into a new Entry and returns the
+	// Entry. Depending on the logger implementation, multiple errors may be
+	// inserted as a slice of errors or a single multi-error. Calling the
+	// method more than once will overwrite the attached error(s) and not
+	// append them.
+	WithErrors(errs ...error) Entry
 
 	// WithField inserts the key and value into the Entry (as tags or
 	// metadata information) and returns the Entry.
@@ -53,6 +58,13 @@ type Entry interface {
 	// Booleans, how they are stored is implementation-specific) field.
 	WithBool(key string, bools ...bool) Entry
 
+	// WithTime is a type-safe convenience for injecting a time.Time (or
+	// time.Times, how they are stored is implementation-specific) field.
+	//
+	// Many loggers add a "time" key automatically and time formatting may
+	// be dependent on configuration or logger choice.
+	WithTime(key string, times ...time.Time) Entry
+
 	// WithDur is a type-safe convenience for injecting a time.Duration
 	// (or time.Durations, how they are stored is implementation-specific)
 	// field.
@@ -66,13 +78,6 @@ type Entry interface {
 	// (or unsigned integers, how they are stored is
 	// implementation-specific) field.
 	WithUint(key string, uints ...uint) Entry
-
-	// WithTime is a type-safe convenience for injecting a time.Time (or
-	// time.Times, how they are stored is implementation-specific) field.
-	//
-	// NOTE(IB): many loggers add a "time" key automatically and time
-	// formatting may be dependant on configuration or logger choice.
-	WithTime(key string, times ...time.Time) Entry
 
 	// Trace updates the Entry's level to TRACE.
 	Trace() Entry
@@ -92,8 +97,4 @@ type Entry interface {
 	// Panic updates the Entry's level to PANIC. Implementations should
 	// panic once the final message for the Entry is logged.
 	Panic() Entry
-
-	// Fatal updates the Entry's level to FATAL. Implementations should
-	// exit non-zero once the final message for the Entry is logged.
-	Fatal() Entry
 }
