@@ -1,0 +1,8 @@
+go 1.19
+
+use (
+	./drivers/logrus
+	./drivers/testlogger
+	./drivers/zerolog
+	./log
+)
