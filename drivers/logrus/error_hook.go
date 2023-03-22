@@ -13,11 +13,15 @@ import (
 // the event versus a hook.
 type errorHook struct{}
 
-// Run on all levels.
+// Levels implements the Logrus Hook interface.
+//
+// Runs on all levels.
 func (errorHook) Levels() []logrus.Level {
 	return logrus.AllLevels
 }
 
+// Fire ... TODO(PH)
+//
 // If the event does not have a stack trace field and an error that
 // implements StackTracer, put the error's stack trace in the stack
 // trace field.

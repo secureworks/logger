@@ -58,6 +58,7 @@ func (l *logger) LogLevel() log.Level {
 func (l *logger) Print(v ...any) {
 	l.Entry(l.LogLevel()).Msg(v)
 }
+
 func (l *logger) Printf(format string, v ...any) {
 	l.Entry(l.LogLevel()).Msgf(format, v...)
 }
@@ -102,7 +103,6 @@ func (l *logger) DisabledEntry() log.Entry {
 	return (*entry[*zerolog.Event])(nil)
 }
 
-// Creates a new entry at the given level.
 func (l *logger) newEntry(level zerolog.Level) log.Entry {
 	if l.notValid() {
 		return l.DisabledEntry()
