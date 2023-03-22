@@ -17,24 +17,24 @@ const (
 	EntryKey
 )
 
-// CtxWithLogger returns a context with Logger l as its value.
-func CtxWithLogger(ctx context.Context, l Logger) context.Context {
+// ContextWithLogger returns a context with Logger l as its value.
+func ContextWithLogger(ctx context.Context, l Logger) context.Context {
 	return context.WithValue(ctx, LoggerKey, l)
 }
 
-// LoggerFromCtx returns the Logger in ctx, or nil if none exists.
-func LoggerFromCtx(ctx context.Context) Logger {
+// LoggerFromContext returns the Logger in ctx, or nil if none exists.
+func LoggerFromContext(ctx context.Context) Logger {
 	l, _ := ctx.Value(LoggerKey).(Logger)
 	return l
 }
 
-// CtxWithEntry returns a context with Entry e as its value.
-func CtxWithEntry(ctx context.Context, e Entry) context.Context {
+// ContextWithEntry returns a context with Entry e as its value.
+func ContextWithEntry(ctx context.Context, e Entry) context.Context {
 	return context.WithValue(ctx, EntryKey, e)
 }
 
-// EntryFromCtx returns the Entry in ctx, or nil if none exists.
-func EntryFromCtx(ctx context.Context) Entry {
+// EntryFromContext returns the Entry in ctx, or nil if none exists.
+func EntryFromContext(ctx context.Context) Entry {
 	e, _ := ctx.Value(EntryKey).(Entry)
 	return e
 }

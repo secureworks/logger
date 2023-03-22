@@ -3,17 +3,17 @@ package log
 import (
 	"fmt"
 	"io"
-	"net/url"
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // These EnvKeys describe environmental variables used to set Config
 // variables.
 const (
-	// LogLevel is the env var representing the log level. Values should
-	// use our logger's representation: "TRACE", "DEBUG", etc.
+	// LogLevel is the env var representing the log level. Values should use
+	// our logger's representation: "TRACE", "DEBUG", etc.
 	LogLevel EnvKey = "LOG_LEVEL"
 
 	// LocalDevel is the env var representing the local debugging setting
@@ -26,44 +26,27 @@ const (
 	// (ImplementationDefaultFormat).
 	Format EnvKey = "LOG_FORMAT"
 
-	// EnableErrStack is the env var representing whether we shall enables error
-	// stack gathering and logging. Relevant values include: "true",
+	// EnableErrStack is the env var representing whether we shall enable
+	// error stack gathering and logging. Relevant values include: "true",
 	// "True", "TRUE".
 	EnableErrStack EnvKey = "ERROR_STACK"
-
-	// SentryDSN is the env var representing the Sentry project DNS. An
-	// empty value disables Sentry.
-	SentryDSN EnvKey = "SENTRY_DSN"
-
-	// SentryLevels is the env var representing which log levels will be
-	// sent to Sentry. Values should use our logger's representation:
-	// "TRACE", "DEBUG", etc., and be comma-separated.
-	SentryLevels EnvKey = "SENTRY_LEVELS"
-
-	// Environment is the env var representing the current deployment
-	// environment. Values commonly used could be "dev", "prod", etc.
-	Environment EnvKey = "ENVIRONMENT"
-
-	// Release is the env var representing the current program release or
-	// revision
-	Release EnvKey = "SENTRY_RELEASE"
-
-	// Server is the env var representing the current server or hostname.
-	Server EnvKey = "SENTRY_SERVER"
-
-	// SentryDebug is the env var representing the debug status for
-	// Sentry. Relevant values include: "true", "True", "TRUE".
-	SentryDebug EnvKey = "SENTRY_DEBUG"
 )
 
 // EnvKey is a publicly documented string type for environment lookups
 // performed for DefaultConfig.
 type EnvKey string
 
-// String converts an EnvKey to a string.
-func (ek EnvKey) String() string {
-	return string(ek)
-}
+func (k EnvKey) String() string { return string(k) }
+
+const (
+	// TODO(PH)
+	DurationNano DurationFormat = "nano"
+	// TODO(PH)
+	DurationText DurationFormat = "text"
+)
+
+// TODO(PH)
+type DurationFormat string
 
 // Config defines common logger configuration options.
 type Config struct {
@@ -82,38 +65,34 @@ type Config struct {
 	// EnableErrStack enables error stack gathering and logging.
 	EnableErrStack bool
 
+	// ReuseEntries overrides the default behavior of silently ignoring
+	// multiple calls to send an Entry. When true, multiple calls will
+	// have the Entry log multiple times.
+	//
+	// TODO(PH): implement, also we want the default to be silent? ARGH why
+	// do we support bad practices?!?!?!
+	ReuseEntries bool
+
+	// TODO(PH)
+	TimeFieldFormat string
+
+	// TODO(PH)
+	DurationFieldFormat DurationFormat
+
 	// Output is the io.Writer the Logger will write messages to.
 	Output io.Writer
-
-	// Sentry is a sub-config type for configurating Sentry if desired. No
-	// other portion of this struct is considered if DSN is not set and
-	// valid.
-	Sentry struct {
-		// DSN is the Sentry DSN.
-		DSN string
-
-		// Release is the program release or revision.
-		Release string
-
-		// Env is the deployment environment; "prod", "dev", etc.
-		Env string
-
-		// Server is the server or hostname.
-		Server string
-
-		// Levels are the log levels that will trigger an event to be sent
-		// to Sentry.
-		Levels []Level
-
-		// Debug is a passthrough for Sentry debugging.
-		Debug bool
-	}
 }
 
-// DefaultConfig returns a Config instance with sane defaults. env is a
-// callback for looking up EnvKeys, it is set to os.Getenv if nil.
-// Fields and values returned by this function can be altered.
-func DefaultConfig(env func(string) string) *Config {
+// DefaultConfig returns a Config instance with sane defaults.
+func DefaultConfig() *Config {
+	return DefaultConfigWithEnvLookup(nil)
+}
+
+// DefaultConfigWithEnvLookup returns a Config instance with sane
+// defaults. env is a callback for looking up EnvKeys, it is set to
+// os.Getenv if nil. Fields and values returned by this function can be
+// altered.
+func DefaultConfigWithEnvLookup(env func(string) string) *Config {
 	config := new(Config)
 	if env == nil {
 		env = os.Getenv
@@ -135,52 +114,19 @@ func DefaultConfig(env func(string) string) *Config {
 			config.Format = LoggerFormat(f)
 		}
 	}
-	config.Output = os.Stderr // May not be set via environment.
 
-	// SentryDSN must be set to use Sentry, so we only configure other
-	// Sentry settings if it exists.
-	sentryDSN := env(SentryDSN.String())
-	if sentryDSN != "" {
-		// Parse SentryLevels, fall back on FATAL, PANIC, ERROR.
-		lvls := []Level{FATAL, PANIC, ERROR}
-		split := strings.Split(env(SentryLevels.String()), ",")
-		if len(split) > 0 && split[0] != "" {
-			lvlSet := make(map[Level]bool, len(split))
-			for _, lvl := range split {
-				lvlSet[LevelFromString(lvl)] = true
-			}
-
-			lvls = make([]Level, 0, len(lvlSet))
-			for lvl := range lvlSet {
-				lvls = append(lvls, lvl)
-			}
-		}
-
-		host, _ := os.Hostname()
-		if server := env(Server.String()); server != "" {
-			host = server
-		}
-
-		config.Sentry.DSN = sentryDSN
-		config.Sentry.Levels = lvls
-		config.Sentry.Release = env(Release.String())
-		config.Sentry.Server = host
-		config.Sentry.Env = env(Environment.String())
-		if debug := env(SentryDebug.String()); debug != "" {
-			config.Sentry.Debug = strings.ToUpper(debug) == "TRUE"
-		}
-	}
-	if _, err := url.Parse(sentryDSN); err != nil {
-		config.Sentry.DSN = ""
-	}
-
+	// May not be set via environment.
+	config.ReuseEntries = false
+	config.TimeFieldFormat = time.RFC3339
+	config.DurationFieldFormat = DurationNano
+	config.Output = os.Stderr
 	return config
 }
 
 // NOTE(PH): increase as we add logger implementations.
 var loggerFactories = make(map[string]newLoggerFn, 4)
 
-// newLoggerFn is a function type for Logger implemenations to register
+// newLoggerFn is a function type for Logger implementations to register
 // themselves.
 type newLoggerFn func(*Config, ...Option) (Logger, error)
 
@@ -193,7 +139,7 @@ func Open(name string, config *Config, opts ...Option) (Logger, error) {
 	}
 
 	if config == nil {
-		config = DefaultConfig(nil)
+		config = DefaultConfig()
 	}
 
 	return nl(config, opts...)
