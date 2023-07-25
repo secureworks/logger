@@ -10,4 +10,4 @@ PATHS=$(
     | xargs -0 dirname \
     | awk '{ printf "\"%s\",", $1; }'
 )
-echo "::set-output name=matrix::[${PATHS%?}]"
+echo echo "matrix=[${PATHS%?}]" >> $GITHUB_OUTPUT
