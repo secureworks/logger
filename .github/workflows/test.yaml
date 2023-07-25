@@ -5,24 +5,29 @@ on:
   push:
     branches:
       - main
+      - v2
 
 jobs:
   resolve-modules:
     name: resolve modules
     runs-on: ubuntu-latest
-    outputs:
-      matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
       - uses: actions/checkout@v3
       - id: set-matrix
-        run: ./.github/tools/resolve-modules.sh
+        run: |
+          PATHS=$(
+          find . -type f -name go.mod -print0 \
+              | xargs -0 dirname \
+              | awk '{ printf "\"%s\",", $1; }'
+          )
+          echo echo "matrix=[${PATHS%?}]" >> "$GITHUB_OUTPUT"
   test:
     name: test
     needs: resolve-modules
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go: [ '1.16', '1.17', '1.18', '1.19' ]
+        go: [ '1.18', '1.19', '1.20' ]
         module: ${{ fromJson(needs.resolve-modules.outputs.matrix) }}
     steps:
       - uses: actions/checkout@v3
