@@ -77,7 +77,8 @@ func ParseFrames(vals ...interface{}) []sentry.Frame {
 //
 // Unwraps the frame description as structured in
 // errors.Frame.MarshalText:
-//   https://github.com/pkg/errors/blob/master/stack.go
+//
+//	https://github.com/pkg/errors/blob/master/stack.go
 func parseFrameStr(frame string) (fnName, file string, lineNo int) {
 	//nolint:errcheck
 	fmt.Sscanf(frame, "%s %s:%d", &fnName, &file, &lineNo)

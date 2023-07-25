@@ -181,7 +181,6 @@ func getReflectVals(val interface{}) (func() []reflect.Value, error) {
 var errInterface = reflect.TypeOf((*error)(nil)).Elem()
 
 // Check and convert a reflect.Value to an error if appropriate.
-//nolint
 func valueToError(val reflect.Value) (err error, wasError bool) {
 	if !val.IsValid() {
 		return

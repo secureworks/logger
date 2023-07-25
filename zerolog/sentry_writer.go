@@ -20,7 +20,6 @@ import (
 //   - https://github.com/rs/zerolog/blob/72acd6cfe8bbbf5c52bfc805a3889c6941499c95/console.go#L86
 //   - https://github.com/rs/zerolog/issues/93
 //   - https://gist.github.com/asdine/f821abe6189a04250ae61b77a3048bd9
-//
 type sentryWriter struct {
 	lvlField []byte
 	hub      *sentry.Hub

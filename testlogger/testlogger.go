@@ -4,7 +4,6 @@
 //
 // Test loggers can be used for simple testing and mocking in an obvious
 // way.
-//
 package testlogger
 
 import (
@@ -31,9 +30,8 @@ func init() {
 // testing. This can also be retrieved using "test" with log.Open and
 // asserting the type, eg:
 //
-//     l, _ := log.Open("test", nil)
-//     logger, _ := l.(*testlogger.Logger)
-//
+//	l, _ := log.Open("test", nil)
+//	logger, _ := l.(*testlogger.Logger)
 func New(config *log.Config, opts ...log.Option) (*Logger, error) {
 	if config == nil {
 		// Env no-op ensures we don't have settings based on env.

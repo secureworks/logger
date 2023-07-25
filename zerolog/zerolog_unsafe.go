@@ -35,28 +35,27 @@ var (
 // This and the above code is for changing the value of the private
 // 'level' field in the zerolog.Event struct. Please see the below issue
 // for more information:
-// 	 - https://github.com/rs/zerolog/issues/408
+//   - https://github.com/rs/zerolog/issues/408
 //
 // The hope is that this code is temporary and remains optional.
 //
 // Note: this is the zerolog.Event as of 1.26.1:
 //
-//     type Event struct {
-//         // Size of slice header.
-//         buf []byte
+//	type Event struct {
+//	    // Size of slice header.
+//	    buf []byte
 //
-//         // Size of pointer/interface we'll use reflect to be safe(er).
-//         w  LevelWriter
+//	    // Size of pointer/interface we'll use reflect to be safe(er).
+//	    w  LevelWriter
 //
-//         // The field we want to change.
-//         level Level
+//	    // The field we want to change.
+//	    level Level
 //
-//         done      func(msg string)
-//         stack     bool
-//         ch        []Hook
-//         skipFrame int
-//     }
-//
+//	    done      func(msg string)
+//	    stack     bool
+//	    ch        []Hook
+//	    skipFrame int
+//	}
 func changeEventLevel(ent *zerolog.Event, lvl zerolog.Level) {
 	levelField := (*zerolog.Level)(unsafe.Pointer((uintptr(unsafe.Pointer(ent)) + lvlField.Offset)))
 	*levelField = lvl
