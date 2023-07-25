@@ -1,3 +1,6 @@
+.vscode
+.idea
+
 # Binaries for programs and plugins
 *.exe
 *.exe~
@@ -13,9 +16,6 @@
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
-
-# Go workspace file
-go.work
 
 # Override common global .gitignore setting to hide logs.
 !log/*
