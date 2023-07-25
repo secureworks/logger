@@ -8,27 +8,20 @@ on:
       - v2
 
 jobs:
-  resolve-modules:
-    name: resolve modules
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - id: set-matrix
-        run: |
-          PATHS=$(
-          find . -type f -name go.mod -print0 \
-              | xargs -0 dirname \
-              | awk '{ printf "\"%s\",", $1; }'
-          )
-          echo echo "matrix=[${PATHS%?}]" >> "$GITHUB_OUTPUT"
   test:
     name: test
-    needs: resolve-modules
     runs-on: ubuntu-latest
     strategy:
       matrix:
         go: [ '1.18', '1.19', '1.20' ]
-        module: ${{ fromJson(needs.resolve-modules.outputs.matrix) }}
+        module:
+          - ./log
+          - ./internal
+          - ./testlogger
+          - ./middleware
+          - ./logrus
+          - ./zerolog
+          - ./logrus
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-go@v3
