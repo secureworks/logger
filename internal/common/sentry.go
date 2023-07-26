@@ -60,7 +60,7 @@ func ParseFrame(str string) sentry.Frame {
 // ParseFrames returns a slice of sentry.Frames for string values
 // produced by a StackTracer. It accepts interfaces as it is meant to be
 // used with JSON marshaling; otherwise call ParseFrame directly.
-func ParseFrames(vals ...interface{}) []sentry.Frame {
+func ParseFrames(vals ...any) []sentry.Frame {
 	frames := make([]sentry.Frame, 0, len(vals))
 	for _, v := range vals {
 		s, ok := v.(string)

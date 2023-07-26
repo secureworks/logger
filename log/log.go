@@ -170,11 +170,11 @@ type Logger interface {
 
 	// WithField inserts the key and value into a new Entry (as tags or
 	// metadata information) and returns the Entry.
-	WithField(key string, value interface{}) Entry
+	WithField(key string, value any) Entry
 
 	// WithFields inserts the given set of fields into a new Entry and
 	// returns the Entry.
-	WithFields(fields map[string]interface{}) Entry
+	WithFields(fields map[string]any) Entry
 
 	// Entry returns a new Entry at the provided log level.
 	Entry(Level) Entry
@@ -217,7 +217,7 @@ type Entry interface {
 
 	// Msgf formats and sets the final log message for this Entry. It will
 	// also send the message if Async has not been set.
-	Msgf(string, ...interface{})
+	Msgf(string, ...any)
 
 	// Msg sets the final log message for this Entry. It will also send
 	// the message if Async has not been set.
@@ -241,11 +241,11 @@ type Entry interface {
 
 	// WithField inserts the key and value into the Entry (as tags or
 	// metadata information) and returns the Entry.
-	WithField(key string, value interface{}) Entry
+	WithField(key string, value any) Entry
 
 	// WithFields inserts the given set of fields into the Entry and
 	// returns the Entry.
-	WithFields(fields map[string]interface{}) Entry
+	WithFields(fields map[string]any) Entry
 
 	// WithStr is a type-safe convenience for injecting a string (or
 	// strings, how they are stored is implmentation-specific) field.
@@ -306,6 +306,6 @@ type Entry interface {
 //
 // NOTE(IB): this is currently required for CustomOptions to work.
 type UnderlyingLogger interface {
-	GetLogger() interface{}
-	SetLogger(interface{})
+	GetLogger() any
+	SetLogger(any)
 }

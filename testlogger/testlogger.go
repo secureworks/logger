@@ -96,7 +96,7 @@ type Logger struct {
 
 	entriesMutex sync.Mutex
 
-	underlyingLoggerValue interface{}
+	underlyingLoggerValue any
 }
 
 var _ log.Logger = (*Logger)(nil)
@@ -120,7 +120,7 @@ func (l *Logger) Entry(lvl log.Level) log.Entry {
 	entry := &Entry{
 		Logger: l,
 		Level:  lvl,
-		Fields: make(map[string]interface{}),
+		Fields: make(map[string]any),
 	}
 	l.entriesMutex.Lock()
 	defer l.entriesMutex.Unlock()
@@ -140,13 +140,13 @@ func (l *Logger) WithError(err error) log.Entry {
 	return l.Entry(l.Config.Level).WithError(err)
 }
 
-func (l *Logger) WithField(k string, val interface{}) log.Entry {
+func (l *Logger) WithField(k string, val any) log.Entry {
 	e, _ := l.Entry(l.Config.Level).(*Entry)
 	e.Fields[k] = val
 	return e
 }
 
-func (l *Logger) WithFields(fields map[string]interface{}) log.Entry {
+func (l *Logger) WithFields(fields map[string]any) log.Entry {
 	e := l.Entry(l.Config.Level)
 	for k, val := range fields {
 		e.WithField(k, val)
@@ -162,12 +162,12 @@ func (l *Logger) Write(p []byte) (int, error) { return l.WriteCloserBuffer.Write
 func (l *Logger) Close() error                { return nil }
 
 // GetLogger will return the value set in SetLogger.
-func (l *Logger) GetLogger() interface{} {
+func (l *Logger) GetLogger() any {
 	return l.underlyingLoggerValue
 }
 
 // SetLogger will set the value that is retrieved in GetLogger.
-func (l *Logger) SetLogger(v interface{}) {
+func (l *Logger) SetLogger(v any) {
 	l.underlyingLoggerValue = v
 }
 
@@ -185,7 +185,7 @@ type Entry struct {
 	Level log.Level
 
 	// Fields is a map of all the fields set using With… methods.
-	Fields map[string]interface{}
+	Fields map[string]any
 
 	// IsAsync holds the the current "async" state of the entry.
 	IsAsync bool
@@ -202,12 +202,12 @@ var _ log.Entry = (*Entry)(nil)
 
 func (e *Entry) Async() log.Entry { e.IsAsync = !e.IsAsync; return e }
 
-func (e *Entry) WithField(k string, val interface{}) log.Entry {
+func (e *Entry) WithField(k string, val any) log.Entry {
 	e.Fields[k] = val
 	return e
 }
 
-func (e *Entry) WithFields(fields map[string]interface{}) log.Entry {
+func (e *Entry) WithFields(fields map[string]any) log.Entry {
 	for k, val := range fields {
 		e.WithField(k, val)
 	}
@@ -303,7 +303,7 @@ func (e *Entry) Msg(msg string) {
 	}
 }
 
-func (e *Entry) Msgf(format string, vals ...interface{}) {
+func (e *Entry) Msgf(format string, vals ...any) {
 	e.Msg(fmt.Sprintf(format, vals...))
 }
 
@@ -351,7 +351,7 @@ func (e *Entry) HasField(name string) bool {
 
 // Field returns the value stored at a given field, or nil if none
 // exists.
-func (e *Entry) Field(name string) interface{} {
+func (e *Entry) Field(name string) any {
 	return e.Fields[name]
 }
 

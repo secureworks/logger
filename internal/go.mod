@@ -1,6 +1,6 @@
 module github.com/secureworks/logger/internal
 
-go 1.20
+go 1.18
 
 require (
 	github.com/VerticalOps/fakesentry v0.0.0-20200925184942-401321fe17b3

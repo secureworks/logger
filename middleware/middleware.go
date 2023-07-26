@@ -144,7 +144,7 @@ func NewHTTPRequestMiddleware(logger log.Logger, lvl log.Level, attrs *HTTPReque
 
 			st, _ := common.WithStackTrace(pve)
 
-			entry.Error().WithFields(map[string]interface{}{
+			entry.Error().WithFields(map[string]any{
 				// Try to keep PanicValue field consistent as a string.
 				log.PanicValue: fmt.Sprintf("%v", pv),
 				log.PanicStack: st.StackTrace(),

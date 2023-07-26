@@ -136,13 +136,13 @@ func AssertFalse(t *testing.T, object bool) {
 }
 
 // AssertEqual is a semantic test assertion for object equality.
-func AssertEqual(t *testing.T, expected interface{}, actual interface{}) {
+func AssertEqual(t *testing.T, expected any, actual any) {
 	t.Helper()
 	assertEquality(t, expected, actual, true)
 }
 
 // AssertNotEqual is a semantic test assertion for object equality.
-func AssertNotEqual(t *testing.T, expected interface{}, actual interface{}) {
+func AssertNotEqual(t *testing.T, expected any, actual any) {
 	t.Helper()
 	assertEquality(t, expected, actual, false)
 }
@@ -163,25 +163,25 @@ func AssertNearEqual(t *testing.T, expected int64, actual int64, delta int64) {
 }
 
 // AssertSame is a semantic test assertion for referential equality.
-func AssertSame(t *testing.T, expected interface{}, actual interface{}) {
+func AssertSame(t *testing.T, expected any, actual any) {
 	t.Helper()
 	assertSameness(t, expected, actual, true)
 }
 
 // AssertNotSame is a semantic test assertion for referential equality.
-func AssertNotSame(t *testing.T, expected interface{}, actual interface{}) {
+func AssertNotSame(t *testing.T, expected any, actual any) {
 	t.Helper()
 	assertSameness(t, expected, actual, false)
 }
 
 // AssertNil is a semantic test assertion for nility.
-func AssertNil(t *testing.T, object interface{}) {
+func AssertNil(t *testing.T, object any) {
 	t.Helper()
 	assertNility(t, object, true)
 }
 
 // AssertNotNil is a semantic test assertion for nility.
-func AssertNotNil(t *testing.T, object interface{}) {
+func AssertNotNil(t *testing.T, object any) {
 	t.Helper()
 	assertNility(t, object, false)
 }
@@ -217,7 +217,7 @@ func AssertNotPanics(t *testing.T, fn func()) {
 
 // NOTE(PH): does not handle bytes well, update if we need to check
 // them.
-func assertEquality(t *testing.T, expected interface{}, actual interface{}, wantEqual bool) {
+func assertEquality(t *testing.T, expected any, actual any, wantEqual bool) {
 	t.Helper()
 
 	if expected == nil && actual == nil && !wantEqual {
@@ -233,7 +233,7 @@ func assertEquality(t *testing.T, expected interface{}, actual interface{}, want
 	}
 }
 
-func assertSameness(t *testing.T, expected interface{}, actual interface{}, wantSame bool) {
+func assertSameness(t *testing.T, expected any, actual any, wantSame bool) {
 	t.Helper()
 
 	isSame := false
@@ -259,7 +259,7 @@ func assertSameness(t *testing.T, expected interface{}, actual interface{}, want
 	}
 }
 
-func assertNility(t *testing.T, object interface{}, wantNil bool) {
+func assertNility(t *testing.T, object any, wantNil bool) {
 	t.Helper()
 
 	isNil := object == nil

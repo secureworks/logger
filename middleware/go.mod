@@ -1,6 +1,6 @@
 module github.com/secureworks/logger/middleware
 
-go 1.20
+go 1.18
 
 require (
 	github.com/pkg/errors v0.9.1
