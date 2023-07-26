@@ -1,26 +1,28 @@
-
-MODULES := $(shell find . -type f -name go.mod -print0 | xargs -0 dirname)
+MODULES := $(shell go list -f '{{.Dir}}' -m)
 
 .DEFAULT_GOAL := help
-.PHONY: help lint test
+.PHONY: help lint test tidy
 
 help:
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-10s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
-lint: $(patsubst %,%.lint,$(MODULES)) ## Runs go vet and golangci-lint.
-test: $(patsubst %,%.test,$(MODULES)) ## Run tests.
+lint: $(patsubst %,%.lint,$(MODULES)) ## Run go vet and golangci-lint.
 
 %.lint:
 	cd $* && go vet ./... && golangci-lint run ;
 
-%.test:
-	cd $* && go test -short -v ./... -race;
+test: ## Run tests.
+	@for mod in $(MODULES); do \
+	  printf "\nRunning tests for module at $${mod}/go.mod:\n"; \
+	  go test -short -v -C "$${mod}" ./... -race ; \
+	done
 
-tidy:
-	cd log && go mod tidy;
-	cd internal && go mod tidy;
-	cd testlogger && go mod tidy;
-	cd middleware && go mod tidy;
-	cd logrus && go mod tidy;
-	cd zerolog && go mod tidy;
+tidy: ## Run go mod tidy.
+	go mod tidy -v -C ./log;
+	go mod tidy -v -C ./internal;
+	go mod tidy -v -C ./testlogger;
+	go mod tidy -v -C ./middleware;
+	go mod tidy -v -C ./logrus;
+	go mod tidy -v -C ./zerolog;
+	go mod tidy -v -C ./logrus;
 	go mod tidy

@@ -1,7 +1,6 @@
 // Package logrus implements a logger with a Logrus driver. See the
 // documentation associated with the Logger, Entry and UnderlyingLogger
 // interfaces for their respective methods.
-//
 package logrus
 
 import (

@@ -2,7 +2,6 @@
 // logger. This interface can use underlying logger implementations as
 // drivers, including Logrus and Zerolog, along with support for
 // reporting services including Sentry.
-//
 package log
 
 import (

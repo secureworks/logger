@@ -1,7 +1,6 @@
 // Package zerolog implements a logger with a Zerolog driver. See the
 // documentation associated with the Logger, Entry and UnderlyingLogger
 // interfaces for their respective methods.
-//
 package zerolog
 
 import (
