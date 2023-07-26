@@ -120,11 +120,11 @@ func newTestLogger() *wrapper {
 	return &wrapper{new(ulLogger)}
 }
 
-func (w *wrapper) GetLogger() interface{} {
+func (w *wrapper) GetLogger() any {
 	return w.ul
 }
 
-func (w *wrapper) SetLogger(iface interface{}) {
+func (w *wrapper) SetLogger(iface any) {
 	if ul, ok := iface.(*ulLogger); ok {
 		w.ul = ul
 	}

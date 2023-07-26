@@ -58,7 +58,7 @@ func (sw *sentryWriter) Write(msg []byte) (n int, err error) {
 	}
 
 	// Extract JSON log entry into a basic container.
-	data := make(map[string]interface{})
+	data := make(map[string]any)
 	err = json.Unmarshal(msg, &data)
 	if err != nil {
 		return
@@ -136,7 +136,7 @@ func (sw *sentryWriter) checkLevel(msg []byte) (zerolog.Level, bool) {
 
 // sentryExceptionFromFields attempts to structure a Sentry Exception
 // from an error message and/or stack trace.
-func sentryExceptionFromFields(data map[string]interface{}, msgf string, stf string) *sentry.Exception {
+func sentryExceptionFromFields(data map[string]any, msgf string, stf string) *sentry.Exception {
 	var exc *sentry.Exception
 
 	// Look up error message field.
@@ -151,7 +151,7 @@ func sentryExceptionFromFields(data map[string]interface{}, msgf string, stf str
 
 	// Either add a stack trace or create an exception with a stack trace
 	// if necessary.
-	if iface, ok := data[stf].([]interface{}); ok {
+	if iface, ok := data[stf].([]any); ok {
 		frames := common.ParseFrames(iface...)
 		if len(frames) > 0 {
 			delete(data, stf)

@@ -17,7 +17,7 @@ func ExampleOption() {
 	// Options can be used to specificy behavior for the logger
 	// implementation beyond the values in the Config. For more examples
 	// see CustomOption.
-	optionFn := func(val interface{}) error {
+	optionFn := func(val any) error {
 		ul, _ := val.(log.UnderlyingLogger)
 		logger, _ := ul.GetLogger().(*logrus.Logger)
 		logger.Formatter = &logrus.JSONFormatter{

@@ -10,7 +10,7 @@ import (
 // implementation that are not covered by the Config.
 //
 // See the example for the basic steps to implement an Option.
-type Option func(interface{}) error
+type Option func(any) error
 
 // CustomOption is used to pass settings directly to the logger
 // implementation that are not covered by the Config.
@@ -32,7 +32,7 @@ type Option func(interface{}) error
 //
 // If the named method returns an error that error will be checked and
 // returned.
-func CustomOption(name string, val interface{}) Option {
+func CustomOption(name string, val any) Option {
 	if name == "" {
 		return noopOption
 	}
@@ -42,7 +42,7 @@ func CustomOption(name string, val interface{}) Option {
 		return errOption(err)
 	}
 
-	return func(topLogger interface{}) (err error) {
+	return func(topLogger any) (err error) {
 		ul, ok := topLogger.(UnderlyingLogger)
 		if !ok {
 			return fmt.Errorf("log: Logger type (%T) does not support the UnderlyingLogger interface", topLogger)
@@ -145,17 +145,17 @@ func CustomOption(name string, val interface{}) Option {
 	}
 }
 
-func noopOption(_ interface{}) error { return nil }
+func noopOption(_ any) error { return nil }
 
 func errOption(err error) Option {
-	return func(_ interface{}) error {
+	return func(_ any) error {
 		return err
 	}
 }
 
 // Identify and validate the CustomOption value input, and normalize
 // it into a function that returns a slice of reflect.Values.
-func getReflectVals(val interface{}) (func() []reflect.Value, error) {
+func getReflectVals(val any) (func() []reflect.Value, error) {
 	reflval := reflect.ValueOf(val)
 	if !reflval.IsValid() {
 		return func() []reflect.Value { return []reflect.Value{} }, nil

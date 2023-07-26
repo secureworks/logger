@@ -106,12 +106,12 @@ func (l *logger) WithError(err error) log.Entry {
 	return entry.WithError(err)
 }
 
-func (l *logger) WithField(key string, val interface{}) log.Entry {
+func (l *logger) WithField(key string, val any) log.Entry {
 	entry := l.Entry(0)
 	return entry.WithField(key, val)
 }
 
-func (l *logger) WithFields(fields map[string]interface{}) log.Entry {
+func (l *logger) WithFields(fields map[string]any) log.Entry {
 	entry := l.Entry(0)
 	return entry.WithFields(fields)
 }
@@ -134,11 +134,11 @@ func (l *logger) WriteCloser(lvl log.Level) io.WriteCloser {
 
 // UnderlyingLogger implementation.
 
-func (l *logger) GetLogger() interface{} {
+func (l *logger) GetLogger() any {
 	return l.lg
 }
 
-func (l *logger) SetLogger(iface interface{}) {
+func (l *logger) SetLogger(iface any) {
 	if lg, ok := iface.(*logrus.Logger); ok {
 		l.lg = lg
 	}
@@ -237,7 +237,7 @@ func (e *entry) WithError(errs ...error) log.Entry {
 	return e.WithField(logrus.ErrorKey, err)
 }
 
-func (e *entry) WithField(key string, val interface{}) log.Entry {
+func (e *entry) WithField(key string, val any) log.Entry {
 	// The deferred functions args are eval'd when defer is called not
 	// when the deferred function is run.
 	defer releaseEntry(e.ent.Logger, e.ent)
@@ -245,7 +245,7 @@ func (e *entry) WithField(key string, val interface{}) log.Entry {
 	return e
 }
 
-func (e *entry) WithFields(fields map[string]interface{}) log.Entry {
+func (e *entry) WithFields(fields map[string]any) log.Entry {
 	defer releaseEntry(e.ent.Logger, e.ent)
 	e.ent = e.ent.WithFields(fields)
 	return e
@@ -256,7 +256,7 @@ func (e *entry) WithBool(key string, bls ...bool) log.Entry {
 		return e
 	}
 
-	var i interface{} = bls[0]
+	var i any = bls[0]
 	if len(bls) > 1 {
 		i = bls
 	}
@@ -268,7 +268,7 @@ func (e *entry) WithDur(key string, durs ...time.Duration) log.Entry {
 		return e
 	}
 
-	var i interface{} = durs[0]
+	var i any = durs[0]
 	if len(durs) > 1 {
 		i = durs
 	}
@@ -280,7 +280,7 @@ func (e *entry) WithInt(key string, is ...int) log.Entry {
 		return e
 	}
 
-	var i interface{} = is[0]
+	var i any = is[0]
 	if len(is) > 1 {
 		i = is
 	}
@@ -292,7 +292,7 @@ func (e *entry) WithUint(key string, us ...uint) log.Entry {
 		return e
 	}
 
-	var i interface{} = us[0]
+	var i any = us[0]
 	if len(us) > 1 {
 		i = us
 	}
@@ -305,7 +305,7 @@ func (e *entry) WithStr(key string, strs ...string) log.Entry {
 	}
 
 	// String allocates when placed into empty interface 🙁.
-	var i interface{} = strs[0]
+	var i any = strs[0]
 	if len(strs) > 1 {
 		i = strs
 	}
@@ -317,7 +317,7 @@ func (e *entry) WithTime(key string, ts ...time.Time) log.Entry {
 		return e
 	}
 
-	var i interface{} = ts[0]
+	var i any = ts[0]
 	if len(ts) > 1 {
 		i = ts
 	}
@@ -335,7 +335,7 @@ func (e *entry) Error() log.Entry { e.lvl = logrus.ErrorLevel; return e }
 func (e *entry) Panic() log.Entry { e.lvl = logrus.PanicLevel; return e }
 func (e *entry) Fatal() log.Entry { e.lvl = logrus.FatalLevel; return e }
 
-func (e *entry) Msgf(format string, vals ...interface{}) {
+func (e *entry) Msgf(format string, vals ...any) {
 	e.Msg(fmt.Sprintf(format, vals...))
 }
 
@@ -368,11 +368,11 @@ func (e *entry) Send() {
 
 // UnderlyingLogger implementation.
 
-func (e *entry) GetLogger() interface{} {
+func (e *entry) GetLogger() any {
 	return e.ent
 }
 
-func (e *entry) SetLogger(l interface{}) {
+func (e *entry) SetLogger(l any) {
 	if ent, ok := l.(*logrus.Entry); ok {
 		e.ent = ent
 	}

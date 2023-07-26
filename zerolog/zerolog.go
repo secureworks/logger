@@ -23,7 +23,7 @@ func init() {
 	// These are package vars in Zerolog so putting them here is less race-y
 	// than setting them in newLogger.
 	zerolog.ErrorStackFieldName = log.StackField
-	zerolog.ErrorStackMarshaler = func(err error) interface{} {
+	zerolog.ErrorStackMarshaler = func(err error) any {
 		st, _ := common.WithStackTrace(err)
 		return st.StackTrace()
 	}
@@ -98,11 +98,11 @@ func (l *logger) WithError(err error) log.Entry {
 	return l.Error().WithError(err)
 }
 
-func (l *logger) WithField(key string, val interface{}) log.Entry {
+func (l *logger) WithField(key string, val any) log.Entry {
 	return l.Entry(0).WithField(key, val)
 }
 
-func (l *logger) WithFields(fields map[string]interface{}) log.Entry {
+func (l *logger) WithFields(fields map[string]any) log.Entry {
 	return l.Entry(0).WithFields(fields)
 }
 
@@ -124,14 +124,14 @@ func (l *logger) WriteCloser(lvl log.Level) io.WriteCloser {
 
 // UnderlyingLogger implementation.
 
-func (l *logger) GetLogger() interface{} {
+func (l *logger) GetLogger() any {
 	if l.notValid() {
 		return nil
 	}
 	return l.lg
 }
 
-func (l *logger) SetLogger(iface interface{}) {
+func (l *logger) SetLogger(iface any) {
 	if lg, ok := iface.(*zerolog.Logger); ok && !l.notValid() {
 		l.lg = lg
 	}
@@ -285,7 +285,7 @@ func (e *entry) WithError(errs ...error) log.Entry {
 	return e
 }
 
-func (e *entry) WithField(key string, val interface{}) log.Entry {
+func (e *entry) WithField(key string, val any) log.Entry {
 	if e.notValid() {
 		return e
 	}
@@ -293,7 +293,7 @@ func (e *entry) WithField(key string, val interface{}) log.Entry {
 	return e
 }
 
-func (e *entry) WithFields(fields map[string]interface{}) log.Entry {
+func (e *entry) WithFields(fields map[string]any) log.Entry {
 	if e.notValid() || len(fields) == 0 {
 		return e
 	}
@@ -393,7 +393,7 @@ func (e *entry) Error() log.Entry { return e.setLevel(zerolog.ErrorLevel) }
 func (e *entry) Panic() log.Entry { return e.setLevel(zerolog.PanicLevel) }
 func (e *entry) Fatal() log.Entry { return e.setLevel(zerolog.FatalLevel) }
 
-func (e *entry) Msgf(format string, vals ...interface{}) {
+func (e *entry) Msgf(format string, vals ...any) {
 	e.Msg(fmt.Sprintf(format, vals...))
 }
 
@@ -447,7 +447,7 @@ func (e *entry) Send() {
 
 // UnderlyingLogger implementation.
 
-func (e *entry) GetLogger() interface{} {
+func (e *entry) GetLogger() any {
 	if e.notValid() {
 		return nil
 	}
@@ -455,7 +455,7 @@ func (e *entry) GetLogger() interface{} {
 	return e.ent
 }
 
-func (e *entry) SetLogger(l interface{}) {
+func (e *entry) SetLogger(l any) {
 	if ent, ok := l.(*zerolog.Event); ok && !e.notValid() {
 		e.ent = ent
 	}
