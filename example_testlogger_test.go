@@ -4,22 +4,14 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"os"
-	"strings"
 
 	"github.com/secureworks/logger/log"
 	"github.com/secureworks/logger/testlogger"
 )
 
 func Example_usingTestlogger() {
-	os.Setenv(string(log.Environment), "test")
-
 	var logger log.Logger
-	if strings.ToLower(os.Getenv(string(log.Environment))) == "test" {
-		logger, _ = log.Open("test", nil)
-	} else {
-		logger, _ = log.Open("zerolog", nil)
-	}
+	logger, _ = testlogger.New(nil)
 
 	// Alternatively you can use testlogger.New. But the above allows us
 	// to dynamically set the logger based on the environment.
