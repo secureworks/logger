@@ -12,7 +12,7 @@ type StackTracer interface {
 // with a StackTracer.
 //
 // It checks if the given error implements StackTracer and returns it if
-// it does. Otherwise it will wrap the error in an error type that
+// it does. Otherwise, it will wrap the error in an error type that
 // implements StackTracer and returns both.
 //
 // If nil is passed then nil is returned.

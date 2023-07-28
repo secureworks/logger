@@ -11,8 +11,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/getsentry/sentry-go"
-	"github.com/makasim/sentryhook"
 	"github.com/sirupsen/logrus"
 
 	"github.com/secureworks/logger/internal/common"
@@ -45,34 +43,6 @@ func newLogger(config *log.Config, opts ...log.Option) (log.Logger, error) {
 
 	if config.EnableErrStack {
 		logrusLogger.AddHook(errorHook{})
-	}
-
-	// Set up Sentry hook.
-	if config.Sentry.DSN != "" {
-		tp := sentry.NewHTTPSyncTransport()
-		tp.Timeout = time.Second * 15
-
-		opts := sentry.ClientOptions{
-			Dsn:              config.Sentry.DSN,
-			Release:          config.Sentry.Release,
-			Environment:      config.Sentry.Env,
-			ServerName:       config.Sentry.Server,
-			Debug:            config.Sentry.Debug,
-			AttachStacktrace: config.EnableErrStack,
-			Transport:        tp,
-		}
-
-		if err := common.InitSentry(opts); err != nil {
-			return nil, err
-		}
-
-		lrusLvls := make([]logrus.Level, 0, len(config.Sentry.Levels))
-		for _, lvl := range config.Sentry.Levels {
-			lrusLvls = append(lrusLvls, lvlToLogrus(lvl))
-		}
-
-		conv := sentryhook.WithConverter(sentryConverter)
-		logrusLogger.AddHook(sentryhook.New(lrusLvls, conv))
 	}
 
 	// Init logger with Logrus and error stack flag and apply options.
