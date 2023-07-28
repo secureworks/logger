@@ -29,12 +29,6 @@ const (
 	// error stack gathering and logging. Relevant values include: "true",
 	// "True", "TRUE".
 	EnableErrStack EnvKey = "ERROR_STACK"
-
-	// Environment is the env var representing the current deployment
-	// environment. Values commonly used could be "dev", "prod", etc.
-	//
-	// TODO(PH): do we keep or remove this?
-	Environment EnvKey = "ENVIRONMENT"
 )
 
 // EnvKey is a publicly documented string type for environment lookups
