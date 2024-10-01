@@ -11,7 +11,6 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/getsentry/sentry-go"
 	"github.com/rs/zerolog"
 
 	"github.com/secureworks/logger/internal/common"
@@ -44,28 +43,6 @@ func newLogger(config *log.Config, opts ...log.Option) (log.Logger, error) {
 	output := config.Output
 	if output == nil {
 		output = os.Stderr
-	}
-
-	// Set up Sentry writer.
-	if config.Sentry.DSN != "" {
-		tp := sentry.NewHTTPSyncTransport()
-		tp.Timeout = time.Second * 15
-		opts := sentry.ClientOptions{
-			Dsn:              config.Sentry.DSN,
-			Release:          config.Sentry.Release,
-			Environment:      config.Sentry.Env,
-			ServerName:       config.Sentry.Server,
-			Debug:            config.Sentry.Debug,
-			AttachStacktrace: config.EnableErrStack,
-			Transport:        tp,
-		}
-		if err := common.InitSentry(opts); err != nil {
-			return nil, err
-		}
-		output = io.MultiWriter(
-			output,
-			newSentryWriter(nil, config.Sentry.Levels...),
-		)
 	}
 
 	zlog := zerolog.New(output).Level(zlvl)
