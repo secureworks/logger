@@ -1,16 +1,18 @@
 # Secureworks Unified Logging Library
 
-`secureworks/logger` is a unified interface that wraps popular logging libraries such as [Logrus][logrus] and 
-[Zerolog][zerolog], and can instrument automatic reporting to services such as [Sentry][sentry]... _And that is just 
+`secureworks/logger` is a unified interface that wraps popular logging
+libraries such as [Logrus][logrus] and [Zerolog][zerolog]: _and that is just
 the beginning!_
 
-This is the logging library used in [SecureWorks Taegis™ XDR (Extended Detection and Response)][taegis-xdr] Cloud 
+This is the logging library used in
+[SecureWorks Taegis™ XDR (Extended Detection and Response)][taegis-xdr] Cloud
 Platform, and is suggested for use with the [Taegis Golang SDK][taegis-sdk].
 
 ## Installation
 
-This library is broken into submodules that are linked together. You may download them separately, but the easiest 
-thing to do is import whichever driver you want to use (`logrus`, `zerolog`, or `testlogger`), and these will 
+This library is broken into submodules that are linked together. You may
+download them separately, but the easiest thing to do is import whichever
+driver you want to use (`logrus`, `zerolog`, or `testlogger`), and these will
 include the dependencies you need:
 
 ```
@@ -23,7 +25,8 @@ If you want the middleware you would also need:
 $ go get -u github.com/secureworks/logger/middleware
 ```
 
-Alternatively, if your project is using Go modules then, reference the driver package(s) in a file's `import`:
+Alternatively, if your project is using Go modules then, reference the driver
+package(s) in a file's `import`:
 
 ```go
 import (
@@ -33,11 +36,13 @@ import (
 )
 ```
 
-You may run any Go command and the toolchain will resolve and fetch the required modules automatically.
+You may run any Go command and the toolchain will resolve and fetch the
+required modules automatically.
 
 ## Usage
 
-[Documentation is available on pkg.go.dev][godocs]. You may also look at the examples in the `logger` package.
+[Documentation is available on pkg.go.dev][godocs]. You may also look at the
+examples in the `logger` package.
 
 ## FAQ
 
@@ -53,7 +58,8 @@ You may run any Go command and the toolchain will resolve and fetch the required
 
 ## License
 
-This library is distributed under the [Apache-2.0 license][apache-2] found in the [LICENSE](./LICENSE) file.
+This library is distributed under the [Apache-2.0 license][apache-2] found in
+the [LICENSE](./LICENSE) file.
 
 ### Runtime Dependencies
 
@@ -62,8 +68,6 @@ This library is distributed under the [Apache-2.0 license][apache-2] found in th
 | [`github.com/pkg/errors`](https://github.com/pkg/errors)                   | Extracts error stack traces.    | [BSD 2-Clause](https://choosealicense.com/licenses/bsd-2-clause) |
 | [`github.com/rs/zerolog`](https://github.com/rs/zerolog)                   | Logger.                         | [MIT](https://choosealicense.com/licenses/mit/)                  |
 | [`github.com/sirupsen/logrus`](https://github.com/sirupsen/logrus)         | Logger.                         | [MIT](https://choosealicense.com/licenses/mit/)                  |
-| [`github.com/getsentry/sentry-go`](https://github.com/getsentry/sentry-go) | Sentry SDK for error reporting. | [BSD 2-Clause](https://choosealicense.com/licenses/bsd-2-clause) |
-| [`github.com/makasim/sentryhook`](https://github.com/makasim/sentryhook)   | Sentry hook for Logrus.         | [MIT](https://choosealicense.com/licenses/mit/)                  |
 
 > _**Note:** these are different based on what you import._ Given which submodule(s) you use, the dependencies
 > are included as follows:
@@ -77,19 +81,14 @@ This library is distributed under the [Apache-2.0 license][apache-2] found in th
 > - `github.com/secureworks/logger/logrus`:
 >   - [`github.com/pkg/errors`](https://github.com/pkg/errors)
 >   - [`github.com/sirupsen/logrus`](https://github.com/sirupsen/logrus)
->   - [`github.com/getsentry/sentry-go`](https://github.com/getsentry/sentry-go)
->   - [`github.com/makasim/sentryhook`](https://github.com/makasim/sentryhook)
 > - `github.com/secureworks/logger/zerolog`:
 >   - [`github.com/rs/zerolog`](https://github.com/rs/zerolog)
->   - [`github.com/getsentry/sentry-go`](https://github.com/getsentry/sentry-go)
 
 ### Test Dependencies
 
-| Library                                                                          | Purpose                         | License                                                          |
-|----------------------------------------------------------------------------------|---------------------------------|------------------------------------------------------------------|
-| [`github.com/pkg/errors`](https://github.com/pkg/errors)                         | Extracts error stack traces.    | [BSD 2-Clause](https://choosealicense.com/licenses/bsd-2-clause) |
-| [`github.com/VerticalOps/fakesentry`](https://github.com/VerticalOps/fakesentry) | Run a fake Sentry server.       | [MIT](https://choosealicense.com/licenses/mit/)                  |
-| [`github.com/getsentry/sentry-go`](https://github.com/getsentry/sentry-go)       | Sentry SDK for error reporting. | [BSD 2-Clause](https://choosealicense.com/licenses/bsd-2-clause) |
+| Library                                                  | Purpose                         | License                                                          |
+|----------------------------------------------------------|---------------------------------|------------------------------------------------------------------|
+| [`github.com/pkg/errors`](https://github.com/pkg/errors) | Extracts error stack traces.    | [BSD 2-Clause](https://choosealicense.com/licenses/bsd-2-clause) |
 
 <!-- Links -->
 
@@ -98,6 +97,5 @@ This library is distributed under the [Apache-2.0 license][apache-2] found in th
 [godocs]: https://pkg.go.dev/github.com/secureworks/logger
 [logrus]: https://github.com/sirupsen/logrus
 [zerolog]: https://github.com/rs/zerolog
-[sentry]: https://docs.sentry.io/platforms/go/
 [apache-2]: https://choosealicense.com/licenses/apache-2.0/
 [unsafe]: https://pkg.go.dev/unsafe
