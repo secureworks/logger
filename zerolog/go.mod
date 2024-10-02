@@ -6,7 +6,7 @@ require (
 	github.com/rs/zerolog v1.27.0
 	github.com/secureworks/errors v0.1.2
 	github.com/secureworks/logger/internal v1.1.0
-	github.com/secureworks/logger/log v1.1.0
+	github.com/secureworks/logger/log v1.2.0
 )
 
 require (

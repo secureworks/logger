@@ -1,4 +1,4 @@
 github.com/secureworks/errors v0.1.2 h1:7CYiN00neeeEtSDqVagttKXYyLGu8sE7wBqiD+Eq8E0=
 github.com/secureworks/errors v0.1.2/go.mod h1:iGDm+slXjGWuc5ozdltnR715LbXzarYt3nE/ydfST7E=
-github.com/secureworks/logger/log v1.1.0 h1:rfBnBswSGHLtyO3qNv66tnUPjekzJ6LEuV+PTFasofo=
-github.com/secureworks/logger/log v1.1.0/go.mod h1:joi16d/v8AfHARO8wsU8o2IDC1zex9gOWjBC+HjXF54=
+github.com/secureworks/logger/log v1.2.0 h1:i/MeGTncKoGhnLhwgSALQ897HiLw6jSBrbiBqKUfZvw=
+github.com/secureworks/logger/log v1.2.0/go.mod h1:o40YODIitWa9CqSGXA8Bf/Xns2zWFL4rbQCzc1MBMcg=

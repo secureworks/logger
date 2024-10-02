@@ -69,21 +69,6 @@ the [LICENSE](./LICENSE) file.
 | [`github.com/rs/zerolog`](https://github.com/rs/zerolog)                   | Logger.                         | [MIT](https://choosealicense.com/licenses/mit/)                  |
 | [`github.com/sirupsen/logrus`](https://github.com/sirupsen/logrus)         | Logger.                         | [MIT](https://choosealicense.com/licenses/mit/)                  |
 
-> _**Note:** these are different based on what you import._ Given which submodule(s) you use, the dependencies
-> are included as follows:
->
-> - `github.com/secureworks/logger/log`:
->   - *No external dependencies.*
-> - `github.com/secureworks/logger/testlogger`: 
->   - *No external dependencies.*
-> - `github.com/secureworks/logger/middleware`:
->   - [`github.com/pkg/errors`](https://github.com/pkg/errors)
-> - `github.com/secureworks/logger/logrus`:
->   - [`github.com/secureworks/errors`](https://github.com/secureworks/errors)
->   - [`github.com/sirupsen/logrus`](https://github.com/sirupsen/logrus)
-> - `github.com/secureworks/logger/zerolog`:
->   - [`github.com/rs/zerolog`](https://github.com/rs/zerolog)
-
 <!-- Links -->
 
 [taegis-xdr]: https://www.secureworks.com/products/taegis/xdr
