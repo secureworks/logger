@@ -34,7 +34,7 @@ func TestDefaultConfig(t *testing.T) {
 
 	t.Run("with environment variables", func(t *testing.T) {
 		fakeenv := map[string]string{
-			"ENVIRONMENT":   loadedConfig.Sentry.Env,
+			"ENVIRONMENT":   "prod",
 			"LOG_LEVEL":     "DEBUG",
 			"LOG_LOCAL_DEV": "true",
 			"LOG_FORMAT":    strconv.Itoa(int(log.ImplementationDefaultFormat)),
