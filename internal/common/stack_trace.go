@@ -1,11 +1,19 @@
 package common
 
-import "github.com/pkg/errors"
+import "github.com/secureworks/errors"
 
 // StackTracer defines a common interface for extracting stack
 // information. Sentry and several other packages use this interface.
 type StackTracer interface {
-	StackTrace() errors.StackTrace
+	StackTrace() errors.Frames
+}
+
+type stackTracer struct {
+	frames errors.Frames
+}
+
+func (st stackTracer) StackTrace() errors.Frames {
+	return st.frames
 }
 
 // WithStackTrace ensures that an error has a stack trace, and pairs it
@@ -20,11 +28,10 @@ func WithStackTrace(err error) (StackTracer, error) {
 	if err == nil {
 		return nil, nil
 	}
-
-	st, ok := err.(StackTracer)
-	if !ok {
-		err = errors.WithStack(err)
-		st = err.(StackTracer)
+	framer, ok := err.(interface{ Frames() errors.Frames })
+	if ok {
+		return stackTracer{framer.Frames()}, nil
 	}
-	return st, err
+	err = errors.WithStackTrace(err)
+	return stackTracer{errors.FramesFrom(err)}, err
 }
