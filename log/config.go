@@ -113,7 +113,11 @@ func Open(name string, config *Config, opts ...Option) (Logger, error) {
 		config = DefaultConfig(nil)
 	}
 
-	return nl(config, opts...)
+	l, err := nl(config, opts...)
+	if err != nil && os.Getenv("SENTRY_DSN") != "" {
+		l.Warn().Msg("built in Sentry support has been removed from the logger; use v1.1 or earlier for Sentry support")
+	}
+	return l, err
 }
 
 // Register registers the provided newLoggerFn function under the given
