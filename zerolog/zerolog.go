@@ -1,7 +1,6 @@
 // Package zerolog implements a logger with a Zerolog driver. See the
 // documentation associated with the Logger, Entry and UnderlyingLogger
 // interfaces for their respective methods.
-//
 package zerolog
 
 import (
@@ -11,7 +10,6 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/getsentry/sentry-go"
 	"github.com/rs/zerolog"
 
 	"github.com/secureworks/logger/internal/common"
@@ -25,7 +23,7 @@ func init() {
 	// than setting them in newLogger.
 	zerolog.ErrorStackFieldName = log.StackField
 	zerolog.ErrorStackMarshaler = func(err error) interface{} {
-		st, _ := common.WithStackTrace(err)
+		st, _ := common.WithStackTrace(err, 5)
 		return st.StackTrace()
 	}
 
@@ -44,28 +42,6 @@ func newLogger(config *log.Config, opts ...log.Option) (log.Logger, error) {
 	output := config.Output
 	if output == nil {
 		output = os.Stderr
-	}
-
-	// Set up Sentry writer.
-	if config.Sentry.DSN != "" {
-		tp := sentry.NewHTTPSyncTransport()
-		tp.Timeout = time.Second * 15
-		opts := sentry.ClientOptions{
-			Dsn:              config.Sentry.DSN,
-			Release:          config.Sentry.Release,
-			Environment:      config.Sentry.Env,
-			ServerName:       config.Sentry.Server,
-			Debug:            config.Sentry.Debug,
-			AttachStacktrace: config.EnableErrStack,
-			Transport:        tp,
-		}
-		if err := common.InitSentry(opts); err != nil {
-			return nil, err
-		}
-		output = io.MultiWriter(
-			output,
-			newSentryWriter(nil, config.Sentry.Levels...),
-		)
 	}
 
 	zlog := zerolog.New(output).Level(zlvl)

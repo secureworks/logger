@@ -6,18 +6,18 @@
 // NewHTTPServer binds a logger to an HTTP server so that it will be
 // present in every request context:
 //
-//     // Create a logger.
-//     logger, err := log.Open("zerolog", nil)
+//	// Create a logger.
+//	logger, err := log.Open("zerolog", nil)
 //
-//     // Generate a new HTTP server with the logger.
-//     srv, logCloser = middleware.NewHTTPServer(logger, log.INFO)
-//     defer logCloser.Close()
+//	// Generate a new HTTP server with the logger.
+//	srv, logCloser = middleware.NewHTTPServer(logger, log.INFO)
+//	defer logCloser.Close()
 //
-//     // Now every request will have access to the logger in the context.
-//     srv.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-//         logger := log.LoggerFromCtx(r.Context())
-//     })
-//     srv.ListenAndServe()
+//	// Now every request will have access to the logger in the context.
+//	srv.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+//	    logger := log.LoggerFromCtx(r.Context())
+//	})
+//	srv.ListenAndServe()
 //
 // NewHTTPRequestMiddleware injects an entry into the context of the the
 // request that it writes after the succeeding handlers process it. This
@@ -25,24 +25,23 @@
 // be configured to include more. Subsequent handlers can also extract
 // the entry and update it to allow for canonical log line logging.
 //
-//     // Create a logger.
-//     logger, err := log.Open("zerolog", nil)
+//	// Create a logger.
+//	logger, err := log.Open("zerolog", nil)
 //
-//     // Define request attributes to log.
-//     attrs := middleware.HTTPRequestLogAttributes{
-//         Headers: []string{"X-Trace-Id", "X-Request-Id"},
-//         Synthetics: map[string]func(*http.Request) string{
-//             "req.unmod-uri": func(r *http.Request) string { return r.RequestURI },
-//         },
-//     }
+//	// Define request attributes to log.
+//	attrs := middleware.HTTPRequestLogAttributes{
+//	    Headers: []string{"X-Trace-Id", "X-Request-Id"},
+//	    Synthetics: map[string]func(*http.Request) string{
+//	        "req.unmod-uri": func(r *http.Request) string { return r.RequestURI },
+//	    },
+//	}
 //
-//     // Generate the middleware and then wrap subsequent handlers.
-//     middlewareFn := middleware.NewHTTPRequestMiddleware(logger, log.INFO, attrs)
-//     handler := middlewareFn(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-//         w.WriteHeader(http.StatusOK)
-//     }))
-//     handler.ServeHTTP(resp, req)
-//
+//	// Generate the middleware and then wrap subsequent handlers.
+//	middlewareFn := middleware.NewHTTPRequestMiddleware(logger, log.INFO, attrs)
+//	handler := middlewareFn(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+//	    w.WriteHeader(http.StatusOK)
+//	}))
+//	handler.ServeHTTP(resp, req)
 package middleware
 
 import (
@@ -143,7 +142,7 @@ func NewHTTPRequestMiddleware(logger log.Logger, lvl log.Level, attrs *HTTPReque
 				pve = fmt.Errorf("%v", pv)
 			}
 
-			st, _ := common.WithStackTrace(pve)
+			st, _ := common.WithStackTrace(pve, 0)
 
 			entry.Error().WithFields(map[string]interface{}{
 				// Try to keep PanicValue field consistent as a string.

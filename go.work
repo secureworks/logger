@@ -1,0 +1,11 @@
+go 1.18
+
+use (
+	.
+	./internal
+	./log
+	./logrus
+	./middleware
+	./testlogger
+	./zerolog
+)

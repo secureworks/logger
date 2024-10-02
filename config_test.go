@@ -2,7 +2,6 @@ package logger_test
 
 import (
 	"os"
-	"sort"
 	"strconv"
 	"testing"
 
@@ -17,21 +16,6 @@ var defaultConfig = &log.Config{
 	Format:         log.JSONFormat,
 	EnableErrStack: false,
 	Output:         os.Stderr,
-	Sentry: struct {
-		DSN     string
-		Release string
-		Env     string
-		Server  string
-		Levels  []log.Level
-		Debug   bool
-	}{
-		DSN:     "",
-		Release: "",
-		Env:     "",
-		Server:  "",
-		Levels:  nil,
-		Debug:   false,
-	},
 }
 
 var loadedConfig = &log.Config{
@@ -40,21 +24,6 @@ var loadedConfig = &log.Config{
 	Format:         log.ImplementationDefaultFormat,
 	EnableErrStack: true,
 	Output:         os.Stderr,
-	Sentry: struct {
-		DSN     string
-		Release string
-		Env     string
-		Server  string
-		Levels  []log.Level
-		Debug   bool
-	}{
-		DSN:     "https://example.com/test",
-		Release: "app-1-a",
-		Env:     "prod",
-		Server:  "app-main",
-		Levels:  []log.Level{log.FATAL, log.PANIC, log.ERROR, log.WARN},
-		Debug:   true,
-	},
 }
 
 func TestDefaultConfig(t *testing.T) {
@@ -65,25 +34,14 @@ func TestDefaultConfig(t *testing.T) {
 
 	t.Run("with environment variables", func(t *testing.T) {
 		fakeenv := map[string]string{
-			"LOG_LEVEL":      "DEBUG",
-			"LOG_LOCAL_DEV":  "true",
-			"LOG_FORMAT":     strconv.Itoa(int(log.ImplementationDefaultFormat)),
-			"ERROR_STACK":    "true",
-			"SENTRY_DSN":     loadedConfig.Sentry.DSN,
-			"SENTRY_LEVELS":  "FATAL,PANIC,ERROR,WARN",
-			"SENTRY_RELEASE": loadedConfig.Sentry.Release,
-			"ENVIRONMENT":    loadedConfig.Sentry.Env,
-			"SENTRY_SERVER":  loadedConfig.Sentry.Server,
-			"SENTRY_DEBUG":   "true",
+			log.Environment.String():    "prod",
+			log.LogLevel.String():       "DEBUG",
+			log.LocalDevel.String():     "true",
+			log.Format.String():         strconv.Itoa(int(log.ImplementationDefaultFormat)),
+			log.EnableErrStack.String(): "true",
 		}
 
 		config := log.DefaultConfig(func(varname string) string { return fakeenv[varname] })
-		// Simplest way to ensure we don't get false negatives.
-		sort.Slice(
-			config.Sentry.Levels, func(i, j int) bool {
-				return config.Sentry.Levels[i] > config.Sentry.Levels[j]
-			},
-		)
 		testutils.AssertEqual(t, loadedConfig, config)
 	})
 

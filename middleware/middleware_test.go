@@ -9,8 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pkg/errors"
-
+	"github.com/secureworks/errors"
 	"github.com/secureworks/logger/internal/testutils"
 	"github.com/secureworks/logger/log"
 	"github.com/secureworks/logger/middleware"
@@ -164,7 +163,7 @@ func TestHTTPRequestMiddlewarePanic(t *testing.T) {
 	testutils.AssertTrue(t, ok)
 	testutils.AssertEqual(t, "this is fine", pv)
 
-	st, ok := entry.Fields[log.PanicStack].(errors.StackTrace)
+	st, ok := entry.Fields[log.PanicStack].(errors.Frames)
 	testutils.AssertTrue(t, ok)
 	testutils.AssertTrue(t, len(st) > 0)
 }

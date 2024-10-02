@@ -1,7 +1,6 @@
 // Package logrus implements a logger with a Logrus driver. See the
 // documentation associated with the Logger, Entry and UnderlyingLogger
 // interfaces for their respective methods.
-//
 package logrus
 
 import (
@@ -12,8 +11,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/getsentry/sentry-go"
-	"github.com/makasim/sentryhook"
 	"github.com/sirupsen/logrus"
 
 	"github.com/secureworks/logger/internal/common"
@@ -46,34 +43,6 @@ func newLogger(config *log.Config, opts ...log.Option) (log.Logger, error) {
 
 	if config.EnableErrStack {
 		logrusLogger.AddHook(errorHook{})
-	}
-
-	// Set up Sentry hook.
-	if config.Sentry.DSN != "" {
-		tp := sentry.NewHTTPSyncTransport()
-		tp.Timeout = time.Second * 15
-
-		opts := sentry.ClientOptions{
-			Dsn:              config.Sentry.DSN,
-			Release:          config.Sentry.Release,
-			Environment:      config.Sentry.Env,
-			ServerName:       config.Sentry.Server,
-			Debug:            config.Sentry.Debug,
-			AttachStacktrace: config.EnableErrStack,
-			Transport:        tp,
-		}
-
-		if err := common.InitSentry(opts); err != nil {
-			return nil, err
-		}
-
-		lrusLvls := make([]logrus.Level, 0, len(config.Sentry.Levels))
-		for _, lvl := range config.Sentry.Levels {
-			lrusLvls = append(lrusLvls, lvlToLogrus(lvl))
-		}
-
-		conv := sentryhook.WithConverter(sentryConverter)
-		logrusLogger.AddHook(sentryhook.New(lrusLvls, conv))
 	}
 
 	// Init logger with Logrus and error stack flag and apply options.
@@ -139,11 +108,11 @@ func (l *logger) GetLogger() interface{} {
 	return l.lg
 }
 
-func (l *logger) SetLogger(iface interface{}) {
-	if lg, ok := iface.(*logrus.Logger); ok {
+func (l *logger) SetLogger(v interface{}) {
+	if lg, ok := v.(*logrus.Logger); ok {
 		l.lg = lg
 	}
-	if lg, ok := iface.(logrus.Logger); ok {
+	if lg, ok := v.(logrus.Logger); ok { //nolint // Mutex is wrapped internally within a pointer.
 		l.lg = &lg
 	}
 }
@@ -233,7 +202,7 @@ func (e *entry) WithError(errs ...error) log.Entry {
 	}
 
 	if e.errStack {
-		_, err = common.WithStackTrace(err)
+		_, err = common.WithStackTrace(err, 3)
 	}
 	return e.WithField(logrus.ErrorKey, err)
 }

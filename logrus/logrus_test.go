@@ -2,13 +2,11 @@ package logrus_test
 
 import (
 	"encoding/json"
-	"errors"
 	"io/ioutil"
 	"testing"
 	"time"
 
-	"github.com/getsentry/sentry-go"
-
+	"github.com/secureworks/errors"
 	"github.com/secureworks/logger/internal/testutils"
 	"github.com/secureworks/logger/log"
 )
@@ -79,32 +77,35 @@ func TestLogrus_Logging(t *testing.T) {
 }
 
 func TestLogrus_Errors(t *testing.T) {
-	srv, sentryMsg := testutils.SentryServer(t, false)
-	defer srv.Close()
-
-	config, _ := testutils.NewConfigWithBuffer(t, log.INFO)
+	config, out := testutils.NewConfigWithBuffer(t, log.INFO)
 	logger, err := log.Open("logrus", config)
 	testutils.AssertNil(t, err)
 
-	testutils.BindSentryClient(t, srv.Transport()) // After logger instantiated.
-
 	logger.WithError(errors.New(testErrorValue)).WithStr("meta", testFieldValue).Msg(testMessage)
 
-	var event *sentry.Event
-	err = json.Unmarshal(sentryMsg(t), &event)
+	var fields struct {
+		Error   string `json:"error"`
+		Level   string `json:"level"`
+		Meta    string `json:"meta"`
+		Message string `json:"msg"`
+		Stack   []struct {
+			File string `json:"file"`
+			Line int    `json:"line"`
+			Func string `json:"function"`
+		} `json:"stack"`
+		Time time.Time `json:"time"`
+	}
+	err = json.Unmarshal(out.Bytes(), &fields)
 	testutils.AssertNil(t, err)
 
 	// Error value.
-	testutils.AssertNotNil(t, event)
-	testutils.AssertEqual(t, 1, len(event.Exception))
-	testutils.AssertEqual(t, testErrorValue, event.Exception[0].Value)
+	testutils.AssertNotNil(t, fields)
+	testutils.AssertEqual(t, testErrorValue, fields.Error)
 
 	// Stack trace.
-	testutils.AssertNotNil(t, event.Exception[0].Stacktrace)
-	testutils.AssertTrue(t, len(event.Exception[0].Stacktrace.Frames) > 0)
+	testutils.AssertNotNil(t, fields.Stack)
+	testutils.AssertTrue(t, len(fields.Stack) > 0)
 
 	// Metadata fields.
-	extra, ok := event.Extra["meta"]
-	testutils.AssertTrue(t, ok)
-	testutils.AssertEqual(t, testFieldValue, extra)
+	testutils.AssertEqual(t, testFieldValue, fields.Meta)
 }
