@@ -34,11 +34,11 @@ func TestDefaultConfig(t *testing.T) {
 
 	t.Run("with environment variables", func(t *testing.T) {
 		fakeenv := map[string]string{
-			"ENVIRONMENT":   "prod",
-			"LOG_LEVEL":     "DEBUG",
-			"LOG_LOCAL_DEV": "true",
-			"LOG_FORMAT":    strconv.Itoa(int(log.ImplementationDefaultFormat)),
-			"ERROR_STACK":   "true",
+			log.Environment.String():    "prod",
+			log.LogLevel.String():       "DEBUG",
+			log.LocalDevel.String():     "true",
+			log.Format.String():         strconv.Itoa(int(log.ImplementationDefaultFormat)),
+			log.EnableErrStack.String(): "true",
 		}
 
 		config := log.DefaultConfig(func(varname string) string { return fakeenv[varname] })
