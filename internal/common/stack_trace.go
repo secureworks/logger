@@ -9,7 +9,20 @@ type StackTracer interface {
 }
 
 type stackTracer struct {
+	err    error
 	frames errors.Frames
+}
+
+func (st stackTracer) Error() string {
+	return st.err.Error()
+}
+
+func (st stackTracer) Unwrap() error {
+	return st.err
+}
+
+func (st stackTracer) Frames() errors.Frames {
+	return st.frames
 }
 
 func (st stackTracer) StackTrace() errors.Frames {
@@ -24,14 +37,17 @@ func (st stackTracer) StackTrace() errors.Frames {
 // implements StackTracer and returns both.
 //
 // If nil is passed then nil is returned.
-func WithStackTrace(err error) (StackTracer, error) {
+func WithStackTrace(err error, skipFrames int) (StackTracer, error) {
 	if err == nil {
 		return nil, nil
 	}
-	framer, ok := err.(interface{ Frames() errors.Frames })
-	if ok {
-		return stackTracer{framer.Frames()}, nil
+
+	var frames errors.Frames
+	if framer, ok := err.(interface{ Frames() errors.Frames }); ok {
+		frames = framer.Frames()
+	} else {
+		frames = errors.CallStackAt(skipFrames)
 	}
-	err = errors.WithStackTrace(err)
-	return stackTracer{errors.FramesFrom(err)}, err
+	st := stackTracer{err: err, frames: frames}
+	return st, st
 }

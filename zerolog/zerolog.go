@@ -1,7 +1,6 @@
 // Package zerolog implements a logger with a Zerolog driver. See the
 // documentation associated with the Logger, Entry and UnderlyingLogger
 // interfaces for their respective methods.
-//
 package zerolog
 
 import (
@@ -24,7 +23,7 @@ func init() {
 	// than setting them in newLogger.
 	zerolog.ErrorStackFieldName = log.StackField
 	zerolog.ErrorStackMarshaler = func(err error) interface{} {
-		st, _ := common.WithStackTrace(err)
+		st, _ := common.WithStackTrace(err, 5)
 		return st.StackTrace()
 	}
 

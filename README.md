@@ -65,7 +65,7 @@ the [LICENSE](./LICENSE) file.
 
 | Library                                                                    | Purpose                         | License                                                          |
 |----------------------------------------------------------------------------|---------------------------------|------------------------------------------------------------------|
-| [`github.com/pkg/errors`](https://github.com/pkg/errors)                   | Extracts error stack traces.    | [BSD 2-Clause](https://choosealicense.com/licenses/bsd-2-clause) |
+| [`github.com/secureworks/errors`](https://github.com/secureworks/errors)   | Extracts error stack traces.    | [BSD 2-Clause](https://choosealicense.com/licenses/bsd-2-clause) |
 | [`github.com/rs/zerolog`](https://github.com/rs/zerolog)                   | Logger.                         | [MIT](https://choosealicense.com/licenses/mit/)                  |
 | [`github.com/sirupsen/logrus`](https://github.com/sirupsen/logrus)         | Logger.                         | [MIT](https://choosealicense.com/licenses/mit/)                  |
 
@@ -79,7 +79,7 @@ the [LICENSE](./LICENSE) file.
 > - `github.com/secureworks/logger/middleware`:
 >   - [`github.com/pkg/errors`](https://github.com/pkg/errors)
 > - `github.com/secureworks/logger/logrus`:
->   - [`github.com/pkg/errors`](https://github.com/pkg/errors)
+>   - [`github.com/secureworks/errors`](https://github.com/secureworks/errors)
 >   - [`github.com/sirupsen/logrus`](https://github.com/sirupsen/logrus)
 > - `github.com/secureworks/logger/zerolog`:
 >   - [`github.com/rs/zerolog`](https://github.com/rs/zerolog)

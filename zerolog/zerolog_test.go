@@ -2,11 +2,11 @@ package zerolog_test
 
 import (
 	"encoding/json"
-	"errors"
 	"io/ioutil"
 	"testing"
 	"time"
 
+	"github.com/secureworks/errors"
 	"github.com/secureworks/logger/internal/testutils"
 	"github.com/secureworks/logger/log"
 )
@@ -82,12 +82,16 @@ func TestZerolog_Errors(t *testing.T) {
 	logger.WithError(errors.New(testErrorValue)).WithStr("meta", testFieldValue).Msg(testMessage)
 
 	var fields struct {
-		Error   string    `json:"error"`
-		Level   string    `json:"level"`
-		Meta    string    `json:"meta"`
-		Message string    `json:"msg"`
-		Stack   []string  `json:"stack"`
-		Time    time.Time `json:"time"`
+		Error   string `json:"error"`
+		Level   string `json:"level"`
+		Meta    string `json:"meta"`
+		Message string `json:"msg"`
+		Stack   []struct {
+			File string `json:"file"`
+			Line int    `json:"line"`
+			Func string `json:"function"`
+		} `json:"stack"`
+		Time time.Time `json:"time"`
 	}
 	err = json.Unmarshal(out.Bytes(), &fields)
 	testutils.AssertNil(t, err)

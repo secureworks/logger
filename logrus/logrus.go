@@ -1,7 +1,6 @@
 // Package logrus implements a logger with a Logrus driver. See the
 // documentation associated with the Logger, Entry and UnderlyingLogger
 // interfaces for their respective methods.
-//
 package logrus
 
 import (
@@ -203,7 +202,7 @@ func (e *entry) WithError(errs ...error) log.Entry {
 	}
 
 	if e.errStack {
-		_, err = common.WithStackTrace(err)
+		_, err = common.WithStackTrace(err, 3)
 	}
 	return e.WithField(logrus.ErrorKey, err)
 }
