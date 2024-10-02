@@ -61,7 +61,7 @@ examples in the `logger` package.
 This library is distributed under the [Apache-2.0 license][apache-2] found in
 the [LICENSE](./LICENSE) file.
 
-### Runtime Dependencies
+### Dependencies
 
 | Library                                                                    | Purpose                         | License                                                          |
 |----------------------------------------------------------------------------|---------------------------------|------------------------------------------------------------------|
@@ -83,12 +83,6 @@ the [LICENSE](./LICENSE) file.
 >   - [`github.com/sirupsen/logrus`](https://github.com/sirupsen/logrus)
 > - `github.com/secureworks/logger/zerolog`:
 >   - [`github.com/rs/zerolog`](https://github.com/rs/zerolog)
-
-### Test Dependencies
-
-| Library                                                  | Purpose                         | License                                                          |
-|----------------------------------------------------------|---------------------------------|------------------------------------------------------------------|
-| [`github.com/pkg/errors`](https://github.com/pkg/errors) | Extracts error stack traces.    | [BSD 2-Clause](https://choosealicense.com/licenses/bsd-2-clause) |
 
 <!-- Links -->
 
