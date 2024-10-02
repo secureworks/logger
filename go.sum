@@ -7,7 +7,6 @@ github.com/CloudyKit/jet/v3 v3.0.0/go.mod h1:HKQPgSJmdK8hdoAbKUUWajkHyHo4RaU5rMd
 github.com/Joker/hpp v1.0.0/go.mod h1:8x5n+M1Hp5hC0g8okX3sR3vFQwynaX/UgSOM9MeBKzY=
 github.com/Joker/jade v1.0.1-0.20190614124447-d475f43051e7/go.mod h1:6E6s8o2AE4KhCrqr6GRJjdC/gNfTdxkIXvuGZZda2VM=
 github.com/Shopify/goreferrer v0.0.0-20181106222321-ec9c9a553398/go.mod h1:a1uqRtAwp2Xwc6WNPJEufxJ7fx3npB4UV/JOLmbu5I0=
-github.com/VerticalOps/fakesentry v0.0.0-20200925184942-401321fe17b3 h1:IrpBFcv7D4Q/EaCmylBEI6Z7IEv3ei1RoY3Bu9heeKQ=
 github.com/VerticalOps/fakesentry v0.0.0-20200925184942-401321fe17b3/go.mod h1:bGH+80C9Ybq4lhRDgKbWcFyLHJl6KBXSIOPgHJZgCy8=
 github.com/ajg/form v1.5.1/go.mod h1:uL1WgH+h2mgNtvBq0339dVnzXdBETtL2LeUXaIv25UY=
 github.com/armon/consul-api v0.0.0-20180202201655-eb2c6b5be1b6/go.mod h1:grANhF5doyWs3UAsr3K4I6qtAmlQcZDesFNEHPZAzj8=
@@ -153,8 +152,11 @@ github.com/rs/zerolog v1.27.0/go.mod h1:7frBqO0oezxmnO7GF86FY++uy8I0Tk/If5ni1G9Q
 github.com/russross/blackfriday v1.5.2/go.mod h1:JO/DiYxRf+HjHt06OyowR9PTA263kcR/rfWxYHBV53g=
 github.com/ryanuber/columnize v2.1.0+incompatible/go.mod h1:sm1tb6uqfes/u+d4ooFouqFdy9/2g9QGwK3SQygK0Ts=
 github.com/schollz/closestmatch v2.1.0+incompatible/go.mod h1:RtP1ddjLong6gTkbtmuhtR2uUrrJOpYzYRvbcPAid+g=
-github.com/secureworks/logger/internal v1.1.0 h1:IS94Zzlpc5Y5XPfpf9zPDLadgs0BYX5d8CkUOMAgO9w=
+github.com/secureworks/errors v0.1.2 h1:7CYiN00neeeEtSDqVagttKXYyLGu8sE7wBqiD+Eq8E0=
+github.com/secureworks/errors v0.1.2/go.mod h1:iGDm+slXjGWuc5ozdltnR715LbXzarYt3nE/ydfST7E=
 github.com/secureworks/logger/internal v1.1.0/go.mod h1:+qvVncRMoqdsGtw+R6Ff/M48QC34I2W2uKGaNvxw0Dc=
+github.com/secureworks/logger/internal v1.2.0 h1:TbRPdWIzw2RpyJ83SU2KpZ/0iqtmaBLQow/mKrZ3Jh4=
+github.com/secureworks/logger/internal v1.2.0/go.mod h1:rqM3ueEqdDX2QFERxN8nbSOTaoNo5ABaiM/ML6K3TDs=
 github.com/secureworks/logger/log v1.1.0/go.mod h1:joi16d/v8AfHARO8wsU8o2IDC1zex9gOWjBC+HjXF54=
 github.com/secureworks/logger/log v1.2.0 h1:i/MeGTncKoGhnLhwgSALQ897HiLw6jSBrbiBqKUfZvw=
 github.com/secureworks/logger/log v1.2.0/go.mod h1:o40YODIitWa9CqSGXA8Bf/Xns2zWFL4rbQCzc1MBMcg=
@@ -162,8 +164,9 @@ github.com/secureworks/logger/logrus v1.1.0 h1:icVPFUHJQsy+NigChV97yh4exsHwOk/gI
 github.com/secureworks/logger/logrus v1.1.0/go.mod h1:LkEoUhXvM8bqnn0o/uiyW5ehE9570/yQ6aFPtQlZQY4=
 github.com/secureworks/logger/middleware v1.1.1 h1:DnRHZx+EOtui64wetiu7SWGBnhatNgUWPtLIdIemkc4=
 github.com/secureworks/logger/middleware v1.1.1/go.mod h1:0OgePVJYYc/3GFvcyE+5hbQJWrxFQ+WMmM3vNaMsblk=
-github.com/secureworks/logger/testlogger v1.1.0 h1:FDgTNZbCATHf0jtCt209Gb6ngQe578u++FQyVAFX5ww=
 github.com/secureworks/logger/testlogger v1.1.0/go.mod h1:Us4ToNHL/pgAWTTd9NAIymTy4GEgV6gdnniA1Q4LkyE=
+github.com/secureworks/logger/testlogger v1.2.0 h1:n1SHDU2dSGnCiTBPNtT3wnTdlt8FLO92gXv8otRc5WA=
+github.com/secureworks/logger/testlogger v1.2.0/go.mod h1:3TpU8/UVr5FvgQYPlWhgR2pKDjm5BjpGkNMBo7iZOnk=
 github.com/secureworks/logger/zerolog v1.1.0 h1:O10odZfTpGBsW6cJMyfbyMfRLhnExe7FAmzgeujcAuE=
 github.com/secureworks/logger/zerolog v1.1.0/go.mod h1:631nGdrOzGWhp58DbwYThmvavIls1BcL06yJ+21hGLE=
 github.com/sergi/go-diff v1.0.0/go.mod h1:0CfEIISq7TuYL3j771MWULgwwjU+GofnZX9QAmXWZgo=
