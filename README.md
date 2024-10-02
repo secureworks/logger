@@ -69,6 +69,8 @@ the [LICENSE](./LICENSE) file.
 | [`github.com/rs/zerolog`](https://github.com/rs/zerolog)                   | Logger.                         | [MIT](https://choosealicense.com/licenses/mit/)                  |
 | [`github.com/sirupsen/logrus`](https://github.com/sirupsen/logrus)         | Logger.                         | [MIT](https://choosealicense.com/licenses/mit/)                  |
 
+As well as any transitive dependencies of the above.
+
 <!-- Links -->
 
 [taegis-xdr]: https://www.secureworks.com/products/taegis/xdr
