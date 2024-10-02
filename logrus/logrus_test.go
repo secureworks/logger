@@ -96,6 +96,7 @@ func TestLogrus_Errors(t *testing.T) {
 		Time time.Time `json:"time"`
 	}
 	err = json.Unmarshal(out.Bytes(), &fields)
+	testutils.AssertNil(t, err)
 
 	// Error value.
 	testutils.AssertNotNil(t, fields)

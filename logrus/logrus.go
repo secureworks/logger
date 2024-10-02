@@ -108,11 +108,11 @@ func (l *logger) GetLogger() interface{} {
 	return l.lg
 }
 
-func (l *logger) SetLogger(iface interface{}) {
-	if lg, ok := iface.(*logrus.Logger); ok {
+func (l *logger) SetLogger(v interface{}) {
+	if lg, ok := v.(*logrus.Logger); ok {
 		l.lg = lg
 	}
-	if lg, ok := iface.(logrus.Logger); ok {
+	if lg, ok := v.(logrus.Logger); ok { //nolint // Mutex is wrapped internally within a pointer.
 		l.lg = &lg
 	}
 }
