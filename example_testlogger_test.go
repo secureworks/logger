@@ -4,17 +4,28 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"os"
+	"strings"
 
 	"github.com/secureworks/logger/log"
 	"github.com/secureworks/logger/testlogger"
 )
 
 func Example_usingTestlogger() {
-	var logger log.Logger
-	logger, _ = testlogger.New(nil)
+	os.Setenv(string(log.Environment), "test")
 
-	// Alternatively you can use testlogger.New. But the above allows us
-	// to dynamically set the logger based on the environment.
+	var logger log.Logger
+	if strings.ToLower(os.Getenv(string(log.Environment))) == "test" {
+		logger, _ = log.Open("test", nil)
+	} else {
+		logger, _ = log.Open("zerolog", nil)
+	}
+
+	// The above allows us to dynamically set the logger based on the
+	// environment. Alternatively you can use testlogger. New: this makes
+	// sense if you want to access the logger directly in a test. Eg:
+	//
+	//	logger, _ = testlogger.New(nil)
 
 	entry := logger.Info()
 	entry.WithStr("tfield", "test-value")

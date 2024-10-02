@@ -14,10 +14,6 @@
 # Editor directories and files
 .idea
 
-# Go workspace file
-go.work
-go.work.sum
-
 # env file
 .env
 
