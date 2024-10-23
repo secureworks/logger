@@ -2,7 +2,7 @@ package zerolog_test
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"testing"
 	"time"
 
@@ -26,7 +26,7 @@ func TestZerolog_New(t *testing.T) {
 
 		logger.Debug().Msg(testMessage)
 
-		data, err := ioutil.ReadAll(out)
+		data, err := io.ReadAll(out)
 		testutils.AssertNil(t, err)
 		testutils.AssertEqual(t, len(data), 0) // Nothing is logged for debug when at INFO.
 	})
@@ -39,7 +39,7 @@ func TestZerolog_New(t *testing.T) {
 
 		logger.Debug().Msg(testMessage)
 
-		data, err := ioutil.ReadAll(out)
+		data, err := io.ReadAll(out)
 		testutils.AssertNil(t, err)
 		testutils.AssertStringContains(t, testMessage, string(data))
 	})
@@ -101,8 +101,15 @@ func TestZerolog_Errors(t *testing.T) {
 	testutils.AssertEqual(t, testErrorValue, fields.Error)
 
 	// Stack trace.
+	var files, funcs []string
+	for _, f := range fields.Stack {
+		files = append(files, f.File)
+		funcs = append(funcs, f.Func)
+	}
 	testutils.AssertNotNil(t, fields.Stack)
 	testutils.AssertTrue(t, len(fields.Stack) > 0)
+	testutils.AssertAnyStringContains(t, "zerolog_test.go", files)
+	testutils.AssertAnyStringContains(t, "zerolog_test.TestZerolog_Errors", funcs)
 
 	// Metadata fields.
 	testutils.AssertEqual(t, testFieldValue, fields.Meta)

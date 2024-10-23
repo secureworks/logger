@@ -106,6 +106,20 @@ func AssertStringContains(t *testing.T, expectedContained string, actualContaini
 	}
 }
 
+func AssertAnyStringContains(t *testing.T, expectedContained string, actualContaining []string) {
+	t.Helper()
+	for _, actual := range actualContaining {
+		if strings.Contains(actual, expectedContained) {
+			return
+		}
+	}
+	t.Errorf(
+		"does not contain:\nexpected to contain: %s\nactual: %s\n",
+		strings.Trim(expectedContained, "\n"),
+		strings.Trim(strings.Join(actualContaining, "\n"), "\n"),
+	)
+}
+
 // AssertNotPanics is a semantic test assertion that a function does not
 // panic.
 func AssertNotPanics(t *testing.T, fn func()) {

@@ -4,7 +4,7 @@
 package zerolog
 
 import (
-	"io/ioutil"
+	"io"
 	"reflect"
 	"testing"
 
@@ -44,7 +44,7 @@ func TestZerolog_ExpectedHookBehavior(t *testing.T) {
 		"zerolog",
 		nil,
 		log.CustomOption("Hook", hook),
-		log.CustomOption("Output", ioutil.Discard),
+		log.CustomOption("Output", io.Discard),
 	)
 	testutils.AssertNil(t, err)
 
