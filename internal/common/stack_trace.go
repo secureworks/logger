@@ -37,6 +37,8 @@ func (st stackTracer) StackTrace() errors.Frames {
 // implements StackTracer and returns both.
 //
 // If nil is passed then nil is returned.
+//
+//go:noinline
 func WithStackTrace(err error, skipFrames int) (StackTracer, error) {
 	if err == nil {
 		return nil, nil

@@ -113,4 +113,7 @@ func TestZerolog_Errors(t *testing.T) {
 
 	// Metadata fields.
 	testutils.AssertEqual(t, testFieldValue, fields.Meta)
+
+	// Nil error stack trace.
+	testutils.AssertNotPanics(t, func() { logger.WithError(nil).Msg("done") })
 }
