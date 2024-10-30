@@ -17,7 +17,6 @@ import (
 )
 
 func errorStackMarshaler(skipLogFrameCount int) func(err error) interface{} {
-	//go:noinline
 	return func(err error) interface{} {
 		if err == nil {
 			return nil
