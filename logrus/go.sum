@@ -5,8 +5,8 @@ github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZb
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/secureworks/errors v0.1.2 h1:7CYiN00neeeEtSDqVagttKXYyLGu8sE7wBqiD+Eq8E0=
 github.com/secureworks/errors v0.1.2/go.mod h1:iGDm+slXjGWuc5ozdltnR715LbXzarYt3nE/ydfST7E=
-github.com/secureworks/logger/internal v1.2.0 h1:TbRPdWIzw2RpyJ83SU2KpZ/0iqtmaBLQow/mKrZ3Jh4=
-github.com/secureworks/logger/internal v1.2.0/go.mod h1:rqM3ueEqdDX2QFERxN8nbSOTaoNo5ABaiM/ML6K3TDs=
+github.com/secureworks/logger/internal v1.2.1 h1:PEOJEUjyS8ra8bU/xRZNMf6rSN7npNAMB9T0n4cCdzc=
+github.com/secureworks/logger/internal v1.2.1/go.mod h1:rqM3ueEqdDX2QFERxN8nbSOTaoNo5ABaiM/ML6K3TDs=
 github.com/secureworks/logger/log v1.2.0 h1:i/MeGTncKoGhnLhwgSALQ897HiLw6jSBrbiBqKUfZvw=
 github.com/secureworks/logger/log v1.2.0/go.mod h1:o40YODIitWa9CqSGXA8Bf/Xns2zWFL4rbQCzc1MBMcg=
 github.com/sirupsen/logrus v1.9.3 h1:dueUQJ1C2q9oE3F7wvmSGAaVtTmUizReu6fjN8uqzbQ=
