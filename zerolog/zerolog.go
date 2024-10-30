@@ -16,6 +16,17 @@ import (
 	"github.com/secureworks/logger/log"
 )
 
+func errorStackMarshaler(skipLogFrameCount int) func(err error) interface{} {
+	//go:noinline
+	return func(err error) interface{} {
+		if err == nil {
+			return nil
+		}
+		st, _ := common.WithStackTrace(err, skipLogFrameCount)
+		return st.StackTrace()
+	}
+}
+
 // Register logger.
 func init() {
 	// As we add another layer of indirection, we need to skip one more than
@@ -25,10 +36,7 @@ func init() {
 	// These are package vars in Zerolog so putting them here is less race-y
 	// than setting them in newLogger.
 	zerolog.ErrorStackFieldName = log.StackField
-	zerolog.ErrorStackMarshaler = func(err error) interface{} {
-		st, _ := common.WithStackTrace(err, skipLogFrameCount)
-		return st.StackTrace()
-	}
+	zerolog.ErrorStackMarshaler = errorStackMarshaler(skipLogFrameCount)
 
 	log.Register("zerolog", newLogger)
 }
